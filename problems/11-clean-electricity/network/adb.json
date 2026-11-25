@@ -1,0 +1,13 @@
+{
+  "id": "adb",
+  "name": "Asian Development Bank",
+  "kind": "funder",
+  "description": "Multilateral bank running the Energy Transition Mechanism to retire coal plants early.",
+  "country": "Philippines (HQ)",
+  "url": "https://www.adb.org",
+  "works_on": [
+    "coal_exit",
+    "finance"
+  ],
+  "links": []
+}

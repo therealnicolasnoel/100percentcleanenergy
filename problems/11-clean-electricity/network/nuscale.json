@@ -1,0 +1,12 @@
+{
+  "id": "nuscale",
+  "name": "NuScale Power",
+  "kind": "builder",
+  "description": "Small modular reactor designer.",
+  "country": "United States",
+  "url": "https://www.nuscalepower.com",
+  "works_on": [
+    "nuclear"
+  ],
+  "links": []
+}

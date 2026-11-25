@@ -19,7 +19,7 @@ export function reportPath(r: Report): string {
 
 /** Path of the Markdown file relative to the repo root, for GitHub links. */
 export function reportFile(r: Report): string {
-  return (r.filePath ?? `reports/${r.id}.md`).replace(/^\.\//, '');
+  return (r.filePath ?? `problems/${r.id}.md`).replace(/^\.\//, '');
 }
 
 /**
@@ -33,8 +33,9 @@ export async function getReports(): Promise<Report[]> {
     const p = problems.find((x) => x.number === r.data.problem);
     if (!p) throw new Error(`${reportFile(r)}: problem ${r.data.problem} does not exist.`);
     if (!p.active) throw new Error(`${reportFile(r)}: problem ${p.number} is not open for reports. Add it to ACTIVE_PROBLEMS in src/data/problems.ts.`);
-    if (reportFolder(r) !== p.slug) throw new Error(`${reportFile(r)}: says problem ${p.number}, so it belongs in reports/${p.slug}/.`);
-    if (!reportSlug(r)) throw new Error(`${reportFile(r)}: reports must be inside a problem folder, reports/${p.slug}/.`);
+    if (reportFolder(r) !== p.slug) throw new Error(`${reportFile(r)}: says problem ${p.number}, so it belongs in problems/${p.slug}/reports/.`);
+    if (['map', 'network'].includes(reportSlug(r))) throw new Error(`${reportFile(r)}: "map" and "network" are reserved names. Rename the report.`);
+    if (!reportSlug(r)) throw new Error(`${reportFile(r)}: reports must be inside problems/${p.slug}/reports/.`);
   }
   return all.sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
 }

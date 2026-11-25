@@ -1,0 +1,26 @@
+{
+  "id": "supply",
+  "title": "Scale solar and wind several times over",
+  "type": "subgoal",
+  "description": "Clean generation has to grow faster than demand, which is rising with electrification and data centres.",
+  "logic": "AND",
+  "children": [
+    "manufacturing",
+    "siting"
+  ],
+  "status": "in_progress",
+  "sources": [
+    {
+      "title": "Global Electricity Review 2025",
+      "publisher": "Ember",
+      "year": 2025,
+      "url": "https://ember-energy.org/latest-insights/global-electricity-review-2025/"
+    },
+    {
+      "title": "Renewables 2024",
+      "publisher": "IEA",
+      "year": 2024,
+      "url": "https://www.iea.org/reports/renewables-2024"
+    }
+  ]
+}

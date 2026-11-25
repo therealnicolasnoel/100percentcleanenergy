@@ -1,0 +1,14 @@
+{
+  "id": "your_step_id",
+  "title": "What has to happen, in one line",
+  "type": "action",
+  "description": "Why this step matters and where it stands today.",
+  "logic": "AND",
+  "children": [],
+  "status": "open",
+  "bottlenecks": [],
+  "blocker": false,
+  "sources": [
+    { "title": "Source title", "publisher": "Publisher", "year": 2026, "url": "https://example.org" }
+  ]
+}

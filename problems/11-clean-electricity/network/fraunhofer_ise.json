@@ -1,0 +1,13 @@
+{
+  "id": "fraunhofer_ise",
+  "name": "Fraunhofer ISE",
+  "kind": "research",
+  "description": "Applied solar and energy-systems research institute.",
+  "country": "Germany",
+  "url": "https://www.ise.fraunhofer.de",
+  "works_on": [
+    "manufacturing",
+    "flexibility"
+  ],
+  "links": []
+}

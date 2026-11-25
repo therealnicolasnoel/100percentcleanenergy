@@ -1,0 +1,13 @@
+{
+  "id": "orsted",
+  "name": "Ørsted",
+  "kind": "builder",
+  "description": "Offshore and onshore wind and solar developer.",
+  "country": "Denmark",
+  "url": "https://orsted.com",
+  "works_on": [
+    "supply",
+    "siting"
+  ],
+  "links": []
+}

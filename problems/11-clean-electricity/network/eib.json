@@ -1,0 +1,13 @@
+{
+  "id": "eib",
+  "name": "European Investment Bank",
+  "kind": "funder",
+  "description": "EU public bank and a major lender to grid and renewable projects.",
+  "country": "European Union",
+  "url": "https://www.eib.org",
+  "works_on": [
+    "transmission",
+    "supply"
+  ],
+  "links": []
+}

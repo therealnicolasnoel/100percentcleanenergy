@@ -3,15 +3,102 @@ import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
 
 /**
- * Reports are Markdown files in this repo's reports/ folder, one folder per
- * problem: reports/<problem-slug>/<yyyy-mm-dd>-<name>.md
+ * Everything about a problem lives in one folder, problems/<slug>/:
  *
- * They reach the site through GitHub: a contributor adds or edits a file
- * (in the browser or by pull request), and merging to main rebuilds and
- * deploys the site. Files starting with _ (like _template.md) are ignored.
+ *   keystone.json          problem metadata and the map's root step
+ *   map/nodes/<id>.json    one file per step of the tree map
+ *   network/<id>.json      one file per organisation in the network map
+ *   reports/<name>.md      reports
+ *
+ * Contributors add or edit these files on GitHub; merging to main rebuilds
+ * the site. The node format matches ../github-app (keystone.json + map/nodes).
  */
+
+const folder = (entry: string) => entry.split('/')[0];
+const fileName = (entry: string) => entry.split('/').pop()!.replace(/\.(md|json)$/, '');
+
+const source = z.object({
+  title: z.string(),
+  publisher: z.string().optional(),
+  year: z.number().int().optional(),
+  url: z.url().optional(),
+});
+
+const reviewStatus = z.enum(['draft', 'generated', 'reviewed', 'challenged']);
+
+const meta = defineCollection({
+  loader: glob({ pattern: '*/keystone.json', base: './problems', generateId: ({ entry }) => folder(entry) }),
+  schema: z.object({
+    schema: z.number().int().default(1),
+    title: z.string(),
+    /** Id of the root node in map/nodes/. */
+    root: z.string(),
+    start_year: z.number().int().optional(),
+    review: z
+      .object({ map: reviewStatus.default('draft'), network: reviewStatus.default('draft') })
+      .default({ map: 'draft', network: 'draft' }),
+  }),
+});
+
+const nodes = defineCollection({
+  loader: glob({
+    pattern: '*/map/nodes/*.json',
+    base: './problems',
+    generateId: ({ entry }) => `${folder(entry)}/${fileName(entry)}`,
+  }),
+  schema: z.object({
+    /** Must match the file name. */
+    id: z.string().regex(/^[a-z0-9_]+$/),
+    title: z.string(),
+    type: z.enum(['goal', 'subgoal', 'action']),
+    description: z.string().optional(),
+    /** AND: every child is required. OR: any one child is enough. */
+    logic: z.enum(['AND', 'OR']).default('AND'),
+    children: z.array(z.string()).default([]),
+    status: z.enum(['open', 'in_progress', 'demonstrated', 'solved', 'impossible']).default('open'),
+    bottlenecks: z.array(z.enum(['Cost', 'Capital', 'Regulation', 'Supply', 'Knowledge', 'Coordination', 'Talent', 'Demand'])).default([]),
+    /** Marks one of the steps that most limits progress today. */
+    blocker: z.boolean().default(false),
+    /** Optional estimate in years (P10–P90) and chance of success, as in ../github-app. */
+    estimate: z.object({ p10: z.number(), p90: z.number(), p_success: z.number().min(0).max(1) }).optional(),
+    /** Another problem number this step is shared with, e.g. 12 for storage. */
+    shared_with: z.array(z.number().int().min(1).max(100)).default([]),
+    sources: z.array(source).default([]),
+  }),
+});
+
+const network = defineCollection({
+  loader: glob({
+    pattern: '*/network/*.json',
+    base: './problems',
+    generateId: ({ entry }) => `${folder(entry)}/${fileName(entry)}`,
+  }),
+  schema: z.object({
+    id: z.string().regex(/^[a-z0-9_]+$/),
+    name: z.string(),
+    /** builder: companies and developers. research: labs, universities, data groups.
+     *  investor: private capital. funder: public, multilateral and philanthropic money.
+     *  policy: governments, regulators and intergovernmental bodies. */
+    kind: z.enum(['builder', 'research', 'investor', 'funder', 'policy']),
+    description: z.string(),
+    country: z.string().optional(),
+    url: z.url().optional(),
+    /** Ids of map nodes this organisation works on. */
+    works_on: z.array(z.string()).default([]),
+    /** Links to other organisations in the same network folder. */
+    links: z
+      .array(z.object({ to: z.string(), type: z.enum(['invests_in', 'funds', 'partners', 'supplies', 'regulates']) }))
+      .default([]),
+    sources: z.array(source).default([]),
+  }),
+});
+
 const reports = defineCollection({
-  loader: glob({ pattern: ['**/*.md', '!**/_*.md'], base: './reports' }),
+  loader: glob({
+    pattern: '*/reports/*.md',
+    base: './problems',
+    generateId: ({ entry }) => `${folder(entry)}/${fileName(entry)}`,
+  }),
   schema: z.object({
     title: z.string(),
     /** Problem number, 1–100. Must match the folder the file is in. */
@@ -20,29 +107,13 @@ const reports = defineCollection({
     updated: z.coerce.date().optional(),
     authors: z.array(z.string()).min(1),
     summary: z.string(),
-    /** Review state, shown as a badge. New reports start as "generated" or "draft". */
-    status: z.enum(['draft', 'generated', 'reviewed', 'challenged']).default('draft'),
+    status: reviewStatus.default('draft'),
     reviewers: z.array(z.string()).default([]),
-    /** Where the problem stands now, as a short headline figure. */
-    headline: z
-      .object({
-        value: z.string(),
-        label: z.string(),
-      })
-      .optional(),
+    headline: z.object({ value: z.string(), label: z.string() }).optional(),
     confidence: z.enum(['low', 'medium', 'high']).optional(),
-    sources: z
-      .array(
-        z.object({
-          title: z.string(),
-          publisher: z.string().optional(),
-          year: z.number().int().optional(),
-          url: z.url().optional(),
-        }),
-      )
-      .default([]),
+    sources: z.array(source).default([]),
     tags: z.array(z.string()).default([]),
   }),
 });
 
-export const collections = { reports };
+export const collections = { meta, nodes, network, reports };

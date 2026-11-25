@@ -1,0 +1,12 @@
+---
+import { gh } from '../site.config';
+import type { Problem } from '../data/problems';
+interface Props { problem: Problem; what: 'map' | 'network' }
+const { problem, what } = Astro.props;
+const keystone = JSON.stringify({ schema: 1, title: problem.title, root: 'goal', review: { map: 'draft', network: 'draft' } }, null, 2);
+---
+<div class="panel" style="margin-top: var(--space-6); display: grid; gap: var(--space-3); justify-items: start">
+  <p class="body">This problem has no {what === 'map' ? 'tree map' : 'network'} yet.</p>
+  <p class="body-sm muted">Start one by adding <code class="data-sm">problems/{problem.slug}/keystone.json</code> and a root step in <code class="data-sm">map/nodes/</code>.</p>
+  <a class="btn btn-primary" href={gh.newFile(`problems/${problem.slug}/keystone.json`, keystone)}>Start it on GitHub</a>
+</div>

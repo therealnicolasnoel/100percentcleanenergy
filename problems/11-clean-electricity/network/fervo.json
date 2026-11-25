@@ -1,0 +1,12 @@
+{
+  "id": "fervo",
+  "name": "Fervo Energy",
+  "kind": "builder",
+  "description": "Enhanced geothermal developer using horizontal drilling.",
+  "country": "United States",
+  "url": "https://fervoenergy.com",
+  "works_on": [
+    "geothermal"
+  ],
+  "links": []
+}

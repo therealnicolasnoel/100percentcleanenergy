@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "title": "Generate 100% of the world's electricity from clean sources",
+  "root": "clean_power",
+  "start_year": 2026,
+  "review": {
+    "map": "generated",
+    "network": "generated"
+  }
+}

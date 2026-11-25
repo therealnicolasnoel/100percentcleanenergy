@@ -7,32 +7,29 @@ import BaseLayout from './BaseLayout.astro';
 import ReportCard from '../components/ReportCard.astro';
 import ReviewBadge from '../components/ReviewBadge.astro';
 import Icon from '../components/Icon.astro';
+import ProblemHeader from '../components/ProblemHeader.astro';
 import type { Problem } from '../data/problems';
+import { KIND_LABEL, KINDS, type ProblemData } from '../lib/problemData';
 import type { Report } from '../lib/reports';
 import { reportPath } from '../lib/reports';
 import { newReportUrl } from '../lib/publish';
 import { gh, url } from '../site.config';
 
-interface Props { problem: Problem; reports: Report[] }
-const { problem, reports } = Astro.props;
+interface Props { problem: Problem; reports: Report[]; data: ProblemData | null }
+const { problem, reports, data } = Astro.props;
+const blockers = data ? data.order.filter((id) => data.nodes[id].blocker) : [];
+const uncovered = data ? data.order.filter((id) => data.nodes[id].type === 'action' && !data.actorsOn[id]?.length) : [];
 const latest = reports[0];
 const withHeadline = reports.find((r) => r.data.headline);
-const folder = `reports/${problem.slug}`;
+const folder = `problems/${problem.slug}/reports`;
 const issueUrl = gh.issues(
   `Problem ${problem.number}: `,
   `Problem: ${problem.number}. ${problem.title}\n\nWhat should a report cover, or which source is missing?\n`,
 );
 ---
 <BaseLayout title={`${problem.number}. ${problem.title}`} description={latest?.data.summary}>
-  <div class="wrap page">
-    <nav class="crumbs body-sm muted" aria-label="Breadcrumb">
-      <a href={url('/')}>All problems</a> / <span>{problem.category}</span>
-    </nav>
-
-    <header class="head">
-      <p class="label muted"><span class="data">Problem {problem.number}</span> · {problem.category}</p>
-      <h1 class="display-xl">{problem.title}</h1>
-    </header>
+  <div class="wrap">
+    <ProblemHeader problem={problem} current="overview" counts={{ reports: reports.length, steps: data?.order.length, organisations: data?.actors.length }} />
 
     <div class="grid">
       <div class="main">
@@ -57,6 +54,27 @@ const issueUrl = gh.issues(
           <a class="btn btn-ghost" href={issueUrl}>Suggest a topic or source</a>
         </div>
 
+        {data && (
+          <div class="two">
+            <a class="panel sum" href={url(`/problems/${problem.slug}/map/`)}>
+              <p class="label muted">Tree map</p>
+              <p class="subheading">{data.order.length} steps</p>
+              <p class="body-sm muted">{data.order.filter((id) => data.nodes[id].status === 'open').length} open · {data.order.filter((id) => data.nodes[id].status === 'in_progress').length} in progress · {data.order.filter((id) => ['demonstrated', 'solved'].includes(data.nodes[id].status)).length} demonstrated or solved</p>
+              {blockers.length > 0 && (
+                <div><p class="label muted">Main blockers</p><ul class="plain body-sm">{blockers.map((id) => <li>{data.nodes[id].title}</li>)}</ul></div>
+              )}
+              <span class="go body-sm">Open the tree map <Icon name="arrow" size={12} /></span>
+            </a>
+            <a class="panel sum" href={url(`/problems/${problem.slug}/network/`)}>
+              <p class="label muted">Who's working on it</p>
+              <p class="subheading">{data.actors.length} organisations</p>
+              <p class="body-sm muted">{KINDS.filter((k) => data.actors.some((a) => a.kind === k)).map((k) => `${data.actors.filter((a) => a.kind === k).length} ${KIND_LABEL[k].toLowerCase()}`).join(' · ')}</p>
+              <div><p class="label muted">Steps with nobody listed</p><p class="body-sm">{uncovered.length ? uncovered.map((id) => data.nodes[id].title).join('; ') : 'None'}</p></div>
+              <span class="go body-sm">Open the network <Icon name="arrow" size={12} /></span>
+            </a>
+          </div>
+        )}
+
         <section class="reports">
           <h2 class="heading">Reports <span class="data muted">{reports.length}</span></h2>
           {reports.length === 0 && <p class="body muted">Nobody has published a report on this problem yet. You could be first.</p>}
@@ -68,7 +86,7 @@ const issueUrl = gh.issues(
         <div class="panel how">
           <h2 class="subheading">How publishing works</h2>
           <ol class="body-sm">
-            <li><strong>Write.</strong> "Publish a report" opens GitHub with the report template in <code class="data-sm">{folder}/</code>.</li>
+            <li><strong>Write.</strong> "Publish a report" opens GitHub with the report template in <code class="data-sm">{folder}/</code>. Tree map steps and organisations are files too.</li>
             <li><strong>Propose.</strong> Saving it there opens a pull request. The build check validates the file.</li>
             <li><strong>Review.</strong> Reviewers comment and approve. Set <code class="data-sm">status: reviewed</code> once an expert has checked it.</li>
             <li><strong>Publish.</strong> Merging to <code class="data-sm">main</code> rebuilds and deploys the site.</li>
@@ -86,11 +104,13 @@ const issueUrl = gh.issues(
   </div>
 </BaseLayout>
 <style>
-  .page { padding-top: var(--space-6); }
-  .crumbs a { color: var(--ink-muted); }
-  .head { margin: var(--space-12) 0 var(--space-8); display: grid; gap: var(--space-3); max-width: 900px; }
-  .grid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: var(--space-6); align-items: start; }
-  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } .head h1 { font-size: 32px; line-height: 38px; } }
+  .grid { margin-top: var(--space-8); display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: var(--space-6); align-items: start; }
+  @media (max-width: 900px) { .grid, .two { grid-template-columns: 1fr; } }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-6); }
+  .sum { display: grid; gap: var(--space-2); align-content: start; color: var(--ink); text-decoration: none; }
+  .sum:hover { border-color: var(--line-strong); color: var(--ink); }
+  .sum:hover .go { text-decoration: underline; }
+  .go { color: var(--signal); display: inline-flex; align-items: center; gap: var(--space-1); }
   .main, .side, .reports { display: grid; gap: var(--space-6); }
   .reports { gap: var(--space-4); margin-top: var(--space-2); }
   .headline { display: grid; gap: var(--space-1); }

@@ -1,0 +1,13 @@
+{
+  "id": "ferc",
+  "name": "FERC",
+  "kind": "policy",
+  "description": "US federal regulator; Order No. 2023 reformed how grid operators process interconnection requests.",
+  "country": "United States",
+  "url": "https://www.ferc.gov",
+  "works_on": [
+    "queues",
+    "transmission"
+  ],
+  "links": []
+}

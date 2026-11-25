@@ -1,0 +1,14 @@
+{
+  "id": "firm",
+  "title": "Firm clean power for long low-wind, low-sun periods",
+  "type": "subgoal",
+  "logic": "OR",
+  "children": [
+    "long_storage",
+    "nuclear",
+    "geothermal",
+    "hydro"
+  ],
+  "status": "open",
+  "description": "Multi-day and seasonal gaps are still mostly covered by fossil plants. Any combination of these routes can close them."
+}

@@ -1,0 +1,22 @@
+{
+  "id": "bev",
+  "name": "Breakthrough Energy Ventures",
+  "kind": "investor",
+  "description": "Venture fund investing in climate technology.",
+  "country": "United States",
+  "url": "https://www.breakthroughenergy.org",
+  "works_on": [
+    "long_storage",
+    "geothermal"
+  ],
+  "links": [
+    {
+      "to": "form_energy",
+      "type": "invests_in"
+    },
+    {
+      "to": "fervo",
+      "type": "invests_in"
+    }
+  ]
+}

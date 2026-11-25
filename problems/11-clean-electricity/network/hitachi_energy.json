@@ -1,0 +1,12 @@
+{
+  "id": "hitachi_energy",
+  "name": "Hitachi Energy",
+  "kind": "builder",
+  "description": "Grid equipment, including HVDC links and transformers.",
+  "country": "Switzerland",
+  "url": "https://www.hitachienergy.com",
+  "works_on": [
+    "transmission"
+  ],
+  "links": []
+}

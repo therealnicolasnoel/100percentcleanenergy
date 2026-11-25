@@ -1,0 +1,13 @@
+{
+  "id": "catl",
+  "name": "CATL",
+  "kind": "builder",
+  "description": "Battery manufacturer, including grid-scale storage systems.",
+  "country": "China",
+  "url": "https://www.catl.com",
+  "works_on": [
+    "manufacturing",
+    "flexibility"
+  ],
+  "links": []
+}

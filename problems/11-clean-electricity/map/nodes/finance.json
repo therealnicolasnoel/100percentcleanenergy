@@ -1,0 +1,19 @@
+{
+  "id": "finance",
+  "title": "Affordable capital for emerging and developing economies",
+  "type": "action",
+  "status": "open",
+  "blocker": true,
+  "bottlenecks": [
+    "Capital"
+  ],
+  "description": "The cost of capital for clean power projects in many emerging economies is two to three times that in advanced economies, which erodes the cost advantage of solar and wind.",
+  "sources": [
+    {
+      "title": "Reducing the Cost of Capital",
+      "publisher": "IEA",
+      "year": 2024,
+      "url": "https://www.iea.org/reports/reducing-the-cost-of-capital"
+    }
+  ]
+}

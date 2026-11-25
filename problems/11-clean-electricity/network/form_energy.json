@@ -1,0 +1,12 @@
+{
+  "id": "form_energy",
+  "name": "Form Energy",
+  "kind": "builder",
+  "description": "Iron-air batteries designed for multi-day (100-hour) storage.",
+  "country": "United States",
+  "url": "https://formenergy.com",
+  "works_on": [
+    "long_storage"
+  ],
+  "links": []
+}

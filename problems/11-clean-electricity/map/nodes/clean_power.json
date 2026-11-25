@@ -1,0 +1,23 @@
+{
+  "id": "clean_power",
+  "title": "100% of the world's electricity from clean sources",
+  "type": "goal",
+  "description": "Success criterion: every hour of global electricity demand is met by renewables, nuclear or other sources with near-zero operating emissions. About 41% of generation was low-carbon in 2024.",
+  "logic": "AND",
+  "children": [
+    "supply",
+    "grids",
+    "firm",
+    "finance",
+    "phaseout"
+  ],
+  "status": "in_progress",
+  "sources": [
+    {
+      "title": "Global Electricity Review 2025",
+      "publisher": "Ember",
+      "year": 2025,
+      "url": "https://ember-energy.org/latest-insights/global-electricity-review-2025/"
+    }
+  ]
+}

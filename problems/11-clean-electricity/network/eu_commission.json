@@ -1,0 +1,13 @@
+{
+  "id": "eu_commission",
+  "name": "European Commission",
+  "kind": "policy",
+  "description": "Proposed the EU Grid Action Plan (2023) to speed up grid investment and permitting.",
+  "country": "European Union",
+  "url": "https://energy.ec.europa.eu",
+  "works_on": [
+    "transmission",
+    "siting"
+  ],
+  "links": []
+}

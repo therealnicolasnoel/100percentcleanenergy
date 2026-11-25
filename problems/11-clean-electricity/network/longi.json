@@ -1,0 +1,12 @@
+{
+  "id": "longi",
+  "name": "LONGi",
+  "kind": "builder",
+  "description": "Solar wafer, cell and module manufacturer.",
+  "country": "China",
+  "url": "https://www.longi.com",
+  "works_on": [
+    "manufacturing"
+  ],
+  "links": []
+}

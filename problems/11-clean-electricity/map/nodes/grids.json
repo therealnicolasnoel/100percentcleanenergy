@@ -1,0 +1,22 @@
+{
+  "id": "grids",
+  "title": "Grids that can move and balance clean power",
+  "type": "subgoal",
+  "logic": "AND",
+  "children": [
+    "transmission",
+    "queues",
+    "flexibility"
+  ],
+  "status": "in_progress",
+  "blocker": true,
+  "description": "The IEA estimates about 80 million km of grid lines need to be added or refurbished by 2040.",
+  "sources": [
+    {
+      "title": "Electricity Grids and Secure Energy Transitions",
+      "publisher": "IEA",
+      "year": 2023,
+      "url": "https://www.iea.org/reports/electricity-grids-and-secure-energy-transitions"
+    }
+  ]
+}

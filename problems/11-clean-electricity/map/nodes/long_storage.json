@@ -1,0 +1,14 @@
+{
+  "id": "long_storage",
+  "title": "Long-duration storage below $20 per kWh",
+  "type": "action",
+  "status": "in_progress",
+  "bottlenecks": [
+    "Cost",
+    "Knowledge"
+  ],
+  "shared_with": [
+    12
+  ],
+  "description": "Iron-air, thermal and other chemistries aim at 100+ hour storage. First commercial projects are being built."
+}

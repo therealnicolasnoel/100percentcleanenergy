@@ -1,0 +1,12 @@
+{
+  "id": "irena",
+  "name": "IRENA",
+  "kind": "policy",
+  "description": "Intergovernmental agency tracking the COP28 goal to triple renewable capacity by 2030.",
+  "country": "UAE (HQ)",
+  "url": "https://www.irena.org",
+  "works_on": [
+    "supply"
+  ],
+  "links": []
+}

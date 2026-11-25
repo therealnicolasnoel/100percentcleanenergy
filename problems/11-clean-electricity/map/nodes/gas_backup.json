@@ -1,0 +1,10 @@
+{
+  "id": "gas_backup",
+  "title": "Gas plants moved to backup or clean fuels",
+  "type": "action",
+  "status": "open",
+  "bottlenecks": [
+    "Cost",
+    "Regulation"
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "id": "iea",
+  "name": "International Energy Agency",
+  "kind": "policy",
+  "description": "Intergovernmental agency providing energy data, analysis and policy advice.",
+  "country": "France (HQ)",
+  "url": "https://www.iea.org",
+  "works_on": [
+    "clean_power",
+    "grids"
+  ],
+  "links": []
+}

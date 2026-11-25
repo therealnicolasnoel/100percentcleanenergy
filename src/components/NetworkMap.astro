@@ -1,0 +1,272 @@
+---
+/**
+ * Universal network map: who funds, builds, researches and regulates each
+ * step of a problem. Three columns (funding and policy → building and
+ * research → steps), laid out at build time. Client code only handles the
+ * selection and the kind filter.
+ */
+import ReviewBadge from './ReviewBadge.astro';
+import SourceChip from './SourceChip.astro';
+import Icon from './Icon.astro';
+import { layoutNetwork, NET, KIND_LABEL, KINDS, COLUMN_TITLES, STATUS_LABEL, type ProblemData } from '../lib/problemData';
+import type { Problem } from '../data/problems';
+import { gh, url } from '../site.config';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+interface Props { data: ProblemData; problem: Problem }
+const { data, problem } = Astro.props;
+const L = layoutNetwork(data);
+const orgTemplate = readFileSync(join(process.cwd(), 'templates', 'organisation.json'), 'utf8');
+const LINK_LABEL: Record<string, string> = { invests_in: 'invests in', funds: 'funds', partners: 'partners with', supplies: 'supplies', regulates: 'regulates' };
+
+const edgePath = (e: (typeof L.edges)[number]) => {
+  const a = L.actorPos[e.from];
+  const b = e.toStep ? L.stepPos[e.to] : L.actorPos[e.to];
+  const x1 = a.x + NET.cardW, y1 = a.y + NET.cardH / 2, x2 = b.x, y2 = b.y + NET.cardH / 2, mx = (x1 + x2) / 2;
+  return `M${x1} ${y1} C${mx} ${y1} ${mx} ${y2} ${x2} ${y2}`;
+};
+const counts = Object.fromEntries(KINDS.map((k) => [k, data.actors.filter((a) => a.kind === k).length]));
+const fundedBy = (id: string) => data.actors.filter((a) => a.links.some((l) => l.to === id));
+const uncovered = data.order.filter((id) => data.nodes[id].type === 'action' && !data.actorsOn[id]?.length);
+---
+<div class="nm" data-net>
+  <div class="bar">
+    <div class="filters" role="group" aria-label="Show organisations by kind">
+      <button type="button" class="btn btn-secondary on" data-filter="all">All <span class="data-sm">{data.actors.length}</span></button>
+      {KINDS.map((k) => (
+        <button type="button" class="btn btn-secondary" data-filter={k} disabled={!counts[k]}>{KIND_LABEL[k]} <span class="data-sm">{counts[k]}</span></button>
+      ))}
+    </div>
+    <div class="meta">
+      <ReviewBadge status={data.meta.review.network} />
+      <a class="btn btn-primary" href={gh.newFile(`problems/${problem.slug}/network/your_org_id.json`, orgTemplate)}><Icon name="plus" />Add an organisation</a>
+    </div>
+  </div>
+
+  <div class="frame" data-filtered="all">
+    <div class="canvas">
+      <div class="heads" style={`width:${L.width}px`}>
+        {COLUMN_TITLES.map((t, i) => <p class="label muted" style={`left:${L.colX[i]}px`}>{t}</p>)}
+      </div>
+      <div class="graph" style={`width:${L.width}px;height:${L.height}px`}>
+        <svg width={L.width} height={L.height} aria-hidden="true">
+          {L.edges.map((e) => (
+            <path d={edgePath(e)} class:list={['edge', e.kind]} data-from={e.from} data-to={e.to} data-kind={data.actorsById[e.from].kind} />
+          ))}
+        </svg>
+        {data.actors.map((a) => {
+          const p = L.actorPos[a.id];
+          return (
+            <button type="button" class="org" data-actor={a.id} data-kind={a.kind} style={`left:${p.x}px;top:${p.y}px;width:${NET.cardW}px;height:${NET.cardH}px`}>
+              <span class="nm-t">{a.name}</span><span class="data-sm k">{KIND_LABEL[a.kind]}</span>
+            </button>
+          );
+        })}
+        {L.steps.map((s) => {
+          const p = L.stepPos[s], n = data.nodes[s];
+          return (
+            <button type="button" class:list={['step', { blocker: n.blocker }]} data-step={s} style={`left:${p.x}px;top:${p.y}px;width:${NET.stepW}px;height:${NET.cardH}px`} title={n.title}>
+              <span class="nm-t">{n.title}</span><span class="data-sm k">{data.actorsOn[s].length}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+
+    <aside class="inspector" aria-live="polite">
+      <section data-panel="" class="pnl">
+        <p class="label muted">Network</p>
+        <h2 class="heading">{data.actors.length} organisations on {L.steps.length} steps</h2>
+        <p class="body-sm muted">Select an organisation or a step to see its connections. Lines from the left show money and policy; lines to the right show which step each group works on.</p>
+        <div class="sec">
+          <p class="label muted">Steps with nobody listed <span class="data-sm">{uncovered.length}</span></p>
+          {uncovered.length
+            ? <ul class="plain body-sm">{uncovered.map((id) => <li><a href={url(`/problems/${problem.slug}/map/#${id}`)}>{data.nodes[id].title}</a></li>)}</ul>
+            : <p class="body-sm muted">Every step has at least one organisation.</p>}
+          <p class="body-sm muted">These are either neglected or not mapped yet. Adding who works on them is a useful first contribution.</p>
+        </div>
+      </section>
+      {data.actors.map((a) => {
+        const by = fundedBy(a.id);
+        return (
+          <section data-panel={a.id} class="pnl" hidden>
+            <p class="label muted">{KIND_LABEL[a.kind]}{a.country && ` · ${a.country}`}</p>
+            <h2 class="heading">{a.name}</h2>
+            <p class="body">{a.description}</p>
+            {a.url && <a class="body-sm" href={a.url} target="_blank" rel="noopener">{a.url.replace(/^https?:\/\//, '')}</a>}
+            <div class="sec">
+              <p class="label muted">Works on</p>
+              <ul class="plain body-sm">{a.works_on.map((n) => <li><a href={url(`/problems/${problem.slug}/map/#${n}`)}>{data.nodes[n].title}</a></li>)}</ul>
+            </div>
+            {a.links.length > 0 && (
+              <div class="sec"><p class="label muted">Connections</p>
+                <ul class="plain body-sm">{a.links.map((l) => <li>{LINK_LABEL[l.type]} <a href={`#${l.to}`} data-goto={l.to}>{data.actorsById[l.to].name}</a></li>)}</ul></div>
+            )}
+            {by.length > 0 && (
+              <div class="sec"><p class="label muted">Backed by</p>
+                <ul class="plain body-sm">{by.map((b) => <li><a href={`#${b.id}`} data-goto={b.id}>{b.name}</a> <span class="muted">· {LINK_LABEL[b.links.find((l) => l.to === a.id)!.type]}</span></li>)}</ul></div>
+            )}
+            <div class="sec">
+              <p class="label muted">Evidence</p>
+              {a.sources.length
+                ? <div class="row">{a.sources.map((s) => <SourceChip {...s} />)}</div>
+                : <p class="body-sm muted">Role taken from the organisation's own description. No further source yet.</p>}
+            </div>
+            <div class="sec gh">
+              <p class="label muted">On GitHub</p>
+              <a class="btn btn-secondary" href={gh.edit(a.file)}><Icon name="pencil" />Propose an edit</a>
+              <a class="btn btn-ghost" href={gh.issues(`Network correction: ${a.name}`, `Problem ${problem.number}, organisation \`${a.id}\` (${a.file})\n\nWhat is wrong or missing, and what is the evidence?\n`)}><Icon name="flag" />Report a correction</a>
+              <p class="data-sm muted file">{a.file}</p>
+            </div>
+          </section>
+        );
+      })}
+      {L.steps.map((s) => {
+        const n = data.nodes[s];
+        return (
+          <section data-panel={`step:${s}`} class="pnl" hidden>
+            <p class="label muted">Step · {STATUS_LABEL[n.status]}{n.blocker && ' · main blocker'}</p>
+            <h2 class="heading">{n.title}</h2>
+            <div class="sec">
+              <p class="label muted">Who's working on this <span class="data-sm">{data.actorsOn[s].length}</span></p>
+              <ul class="plain body-sm">{data.actorsOn[s].map((id) => <li><a href={`#${id}`} data-goto={id}>{data.actorsById[id].name}</a> <span class="muted">· {KIND_LABEL[data.actorsById[id].kind]}</span></li>)}</ul>
+            </div>
+            <a class="btn btn-secondary" href={url(`/problems/${problem.slug}/map/#${s}`)}>Open in the tree map</a>
+          </section>
+        );
+      })}
+    </aside>
+  </div>
+
+  <section class="tbl">
+    <h2 class="heading">All organisations</h2>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Organisation</th><th>Kind</th><th>Country</th><th>Works on</th></tr></thead>
+        <tbody>
+          {data.actors.map((a) => (
+            <tr>
+              <td><a href={`#${a.id}`} data-goto={a.id}>{a.name}</a></td>
+              <td class="label">{KIND_LABEL[a.kind]}</td>
+              <td class="body-sm muted">{a.country}</td>
+              <td class="body-sm">{a.works_on.map((n) => data.nodes[n].title).join('; ')}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    <p class="body-sm muted">Each organisation is a file in <code class="data-sm">problems/{problem.slug}/network/</code>. Kinds: building (companies and developers), research (labs and data groups), investing (private capital), funding (public, multilateral and philanthropic money), policy (governments and regulators).</p>
+  </section>
+</div>
+
+<script>
+  for (const root of document.querySelectorAll<HTMLElement>('[data-net]')) {
+    const body = root.querySelector<HTMLElement>(".frame")!;
+    const edges = [...root.querySelectorAll<SVGPathElement>('path[data-from]')];
+    const select = (key: string, scroll = false) => {
+      // key: "" (overview), an actor id, or "step:<id>"
+      const isStep = key.startsWith('step:');
+      const id = isStep ? key.slice(5) : key;
+      const near = new Set<string>();
+      for (const e of edges) {
+        const works = e.classList.contains('works_on');
+        const hit = isStep ? works && e.dataset.to === id : e.dataset.from === id || (!works && e.dataset.to === id);
+        e.classList.toggle('on', !!key && hit);
+        if (key && hit) { near.add(e.dataset.from!); near.add(e.dataset.to!); }
+      }
+      body.classList.toggle('focus', !!key);
+      root.querySelectorAll<HTMLElement>('[data-actor]').forEach((el) => {
+        el.classList.toggle('sel', !isStep && el.dataset.actor === id);
+        el.classList.toggle('near', near.has(el.dataset.actor!));
+      });
+      root.querySelectorAll<HTMLElement>('[data-step]').forEach((el) => {
+        el.classList.toggle('sel', isStep && el.dataset.step === id);
+        el.classList.toggle('near', near.has(el.dataset.step!));
+      });
+      root.querySelectorAll<HTMLElement>('[data-panel]').forEach((p) => (p.hidden = p.dataset.panel !== key));
+      if (scroll) root.querySelector(isStep ? `[data-step="${CSS.escape(id)}"]` : `[data-actor="${CSS.escape(id)}"]`)?.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
+      history.replaceState(null, '', key ? `#${isStep ? key : id}` : location.pathname);
+    };
+    root.addEventListener('click', (ev) => {
+      const t = ev.target as HTMLElement;
+      const f = t.closest<HTMLElement>('[data-filter]');
+      if (f) {
+        root.querySelectorAll('[data-filter]').forEach((b) => b.classList.toggle('on', b === f));
+        body.dataset.filtered = f.dataset.filter!;
+        return;
+      }
+      const a = t.closest<HTMLElement>('[data-actor],[data-step],[data-goto]');
+      if (!a) return;
+      ev.preventDefault();
+      const key = a.dataset.actor ?? a.dataset.goto ?? `step:${a.dataset.step}`;
+      const current = root.querySelector('.sel') as HTMLElement | null;
+      const same = current && (current.dataset.actor === key || `step:${current.dataset.step}` === key);
+      select(same ? '' : key, !!a.dataset.goto);
+      if (a.dataset.goto) body.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    const fromHash = () => {
+      const h = decodeURIComponent(location.hash.slice(1));
+      if (h && (root.querySelector(`[data-actor="${CSS.escape(h)}"]`) || root.querySelector(`[data-panel="${CSS.escape(h)}"]`))) select(h, true);
+    };
+    fromHash();
+    window.addEventListener('hashchange', fromHash);
+  }
+</script>
+
+<style>
+  .nm { display: grid; gap: var(--space-4); margin-top: var(--space-6); }
+  .bar { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-3); align-items: center; }
+  .filters { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .filters .btn { padding: var(--space-1) var(--space-3); }
+  .filters .btn.on { background: var(--signal-tint); border-color: var(--signal); }
+  .filters .btn:disabled { opacity: 0.4; cursor: default; }
+  .meta { display: flex; gap: var(--space-3); align-items: center; flex-wrap: wrap; }
+  .frame { display: grid; grid-template-columns: minmax(0, 1fr) 340px; border: var(--stroke-hairline) solid var(--line); background: var(--surface-0); }
+  .canvas { overflow: auto; max-height: 80vh; }
+  .heads { position: relative; height: 32px; }
+  .heads p { position: absolute; top: var(--space-3); }
+  .graph { position: relative; }
+  .graph svg { position: absolute; inset: 0; }
+  .edge { fill: none; stroke: var(--line-strong); stroke-width: var(--stroke-hairline); opacity: 0.55; }
+  .edge.link { stroke: var(--ink); stroke-width: var(--stroke-mark); opacity: 0.8; }
+  .focus .edge { opacity: 0.12; }
+  .focus .edge.on { stroke: var(--signal); stroke-width: var(--stroke-path); opacity: 1; }
+  .org, .step { position: absolute; display: flex; justify-content: space-between; align-items: center; gap: var(--space-2); font: inherit; color: var(--ink); background: var(--surface-1); border: var(--stroke-hairline) solid var(--line-strong); border-radius: var(--radius-sm); padding: 0 var(--space-3); cursor: pointer; text-align: left; }
+  .step { background: var(--surface-2); }
+  .step.blocker { border-width: var(--stroke-path); padding: 0 11px; }
+  .org:hover, .step:hover { border-color: var(--ink); }
+  .nm-t { font-size: 13px; line-height: 16px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .k { color: var(--ink-muted); flex: none; }
+  .focus .org, .focus .step { opacity: 0.35; }
+  .focus .near, .focus .sel { opacity: 1; }
+  .sel { background: var(--signal-tint) !important; border: var(--stroke-path) solid var(--signal) !important; padding: 0 11px !important; }
+  [data-filtered='builder'] .org:not([data-kind='builder']),
+  [data-filtered='research'] .org:not([data-kind='research']),
+  [data-filtered='investor'] .org:not([data-kind='investor']),
+  [data-filtered='funder'] .org:not([data-kind='funder']),
+  [data-filtered='policy'] .org:not([data-kind='policy']) { opacity: 0.15; }
+  [data-filtered='builder'] .edge:not([data-kind='builder']),
+  [data-filtered='research'] .edge:not([data-kind='research']),
+  [data-filtered='investor'] .edge:not([data-kind='investor']),
+  [data-filtered='funder'] .edge:not([data-kind='funder']),
+  [data-filtered='policy'] .edge:not([data-kind='policy']) { opacity: 0.05; }
+  .inspector { background: var(--surface-1); border-left: var(--stroke-hairline) solid var(--line); padding: var(--space-4); overflow: auto; max-height: 80vh; }
+  .pnl { display: grid; gap: var(--space-3); justify-items: start; }
+  .sec { display: grid; gap: var(--space-2); justify-items: start; width: 100%; }
+  .row { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .plain { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-1); }
+  .gh .btn { width: 100%; }
+  .file { word-break: break-all; }
+  .tbl { display: grid; gap: var(--space-3); margin-top: var(--space-8); }
+  .scroll { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; }
+  th { background: var(--surface-2); text-align: left; font-size: 12px; line-height: 16px; font-weight: 500; }
+  th, td { padding: var(--space-2) var(--space-3); border-bottom: var(--stroke-hairline) solid var(--line); vertical-align: top; }
+  code { background: var(--surface-2); padding: 0 var(--space-1); border-radius: var(--radius-sm); }
+  @media (max-width: 900px) {
+    .frame { grid-template-columns: 1fr; }
+    .canvas { max-height: 65vh; }
+    .inspector { border-left: 0; border-top: var(--stroke-hairline) solid var(--line); max-height: none; }
+  }
+</style>

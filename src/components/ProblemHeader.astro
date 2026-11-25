@@ -1,0 +1,45 @@
+---
+/** Shared header for every problem view: breadcrumb, title and view tabs. */
+import type { Problem } from '../data/problems';
+import { url } from '../site.config';
+interface Props {
+  problem: Problem;
+  current: 'overview' | 'map' | 'network';
+  counts?: { reports?: number; steps?: number; organisations?: number };
+  /** display-xl on the overview, display-l on the dense map views. */
+  size?: 'xl' | 'l';
+}
+const { problem, current, counts = {}, size = 'xl' } = Astro.props;
+const base = `/problems/${problem.slug}/`;
+const tabs = [
+  { id: 'overview', label: 'Overview and reports', href: base, n: counts.reports },
+  { id: 'map', label: 'Tree map', href: `${base}map/`, n: counts.steps },
+  { id: 'network', label: "Who's working on it", href: `${base}network/`, n: counts.organisations },
+];
+---
+<header class="ph">
+  <nav class="crumbs body-sm muted" aria-label="Breadcrumb">
+    <a href={url('/')}>All problems</a> / <span>{problem.category}</span>
+  </nav>
+  <p class="label muted"><span class="data">Problem {problem.number}</span> · {problem.category}</p>
+  <h1 class={size === 'xl' ? 'display-xl' : 'display-l'}>{problem.title}</h1>
+  <nav class="tabs" aria-label="Problem views">
+    {tabs.map((t) => (
+      <a class:list={['tab label', { on: t.id === current }]} href={url(t.href)} aria-current={t.id === current ? 'page' : undefined}>
+        {t.label}{t.n !== undefined && <span class="data-sm n">{t.n}</span>}
+      </a>
+    ))}
+  </nav>
+</header>
+<style>
+  .ph { display: grid; gap: var(--space-3); padding-top: var(--space-6); }
+  .crumbs { margin-bottom: var(--space-6); }
+  .crumbs a { color: var(--ink-muted); }
+  h1 { max-width: 900px; }
+  @media (max-width: 900px) { h1.display-xl { font-size: 32px; line-height: 38px; } }
+  .tabs { display: flex; flex-wrap: wrap; gap: var(--space-1); border-bottom: var(--stroke-hairline) solid var(--line); margin-top: var(--space-4); }
+  .tab { display: inline-flex; gap: var(--space-2); align-items: center; padding: var(--space-2) var(--space-3); color: var(--ink); text-decoration: none; border-bottom: var(--stroke-path) solid transparent; margin-bottom: -1px; font-size: 14px; }
+  .tab:hover { background: var(--surface-2); color: var(--ink); }
+  .tab.on { border-bottom-color: var(--signal); }
+  .n { color: var(--ink-muted); }
+</style>

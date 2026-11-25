@@ -1,0 +1,12 @@
+{
+  "id": "ember",
+  "name": "Ember",
+  "kind": "research",
+  "description": "Energy think tank publishing open electricity data for every country.",
+  "country": "United Kingdom",
+  "url": "https://ember-energy.org",
+  "works_on": [
+    "clean_power"
+  ],
+  "links": []
+}

@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { gh, formatDate } from '../site.config';
 import type { Problem } from '../data/problems';
 
-const template = readFileSync(join(process.cwd(), 'reports', '_template.md'), 'utf8');
+const template = readFileSync(join(process.cwd(), 'templates', 'report.md'), 'utf8');
 
 /**
  * A link that opens GitHub's editor with a new report for this problem,
@@ -14,5 +14,5 @@ export function newReportUrl(problem: Problem, today = new Date()): string {
   const body = template
     .replace(/^problem: .*$/m, `problem: ${problem.number}`)
     .replace(/^date: .*$/m, `date: ${date}`);
-  return gh.newFile(`reports/${problem.slug}/${date}-your-report-name.md`, body);
+  return gh.newFile(`problems/${problem.slug}/reports/${date}-your-report-name.md`, body);
 }

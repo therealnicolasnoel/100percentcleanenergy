@@ -1,0 +1,11 @@
+{
+  "id": "flexibility",
+  "title": "Flexible demand and short-duration storage",
+  "type": "action",
+  "status": "demonstrated",
+  "bottlenecks": [
+    "Coordination",
+    "Demand"
+  ],
+  "description": "Batteries, smart charging and time-of-use tariffs shift demand into sunny and windy hours. Proven at scale in several markets; not yet the norm."
+}

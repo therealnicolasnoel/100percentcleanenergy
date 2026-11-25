@@ -3,6 +3,7 @@
 /* DESIGN-TODO: page max-width (1200px) and reading measure (68ch) are not tokens yet. */
 
 *, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html { -webkit-text-size-adjust: 100%; }
 body {
   margin: 0;

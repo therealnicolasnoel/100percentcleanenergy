@@ -1,0 +1,22 @@
+{
+  "id": "geothermal",
+  "title": "Next-generation geothermal anywhere",
+  "type": "action",
+  "status": "demonstrated",
+  "bottlenecks": [
+    "Cost",
+    "Knowledge"
+  ],
+  "shared_with": [
+    20
+  ],
+  "description": "Enhanced geothermal uses drilling techniques from oil and gas to reach hot rock outside volcanic regions. Pilot plants have delivered power.",
+  "sources": [
+    {
+      "title": "The Future of Geothermal Energy",
+      "publisher": "IEA",
+      "year": 2024,
+      "url": "https://www.iea.org/reports/the-future-of-geothermal-energy"
+    }
+  ]
+}

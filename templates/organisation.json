@@ -1,0 +1,11 @@
+{
+  "id": "your_org_id",
+  "name": "Organisation name",
+  "kind": "builder",
+  "description": "What they do on this problem, in one sentence.",
+  "country": "Country",
+  "url": "https://example.org",
+  "works_on": [],
+  "links": [],
+  "sources": []
+}

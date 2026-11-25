@@ -1,0 +1,12 @@
+{
+  "id": "octopus",
+  "name": "Octopus Energy",
+  "kind": "builder",
+  "description": "Energy supplier using time-of-use tariffs and its Kraken platform to shift household demand.",
+  "country": "United Kingdom",
+  "url": "https://octopus.energy",
+  "works_on": [
+    "flexibility"
+  ],
+  "links": []
+}

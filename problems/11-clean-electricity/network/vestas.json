@@ -1,0 +1,12 @@
+{
+  "id": "vestas",
+  "name": "Vestas",
+  "kind": "builder",
+  "description": "Wind turbine manufacturer and service provider.",
+  "country": "Denmark",
+  "url": "https://www.vestas.com",
+  "works_on": [
+    "manufacturing"
+  ],
+  "links": []
+}

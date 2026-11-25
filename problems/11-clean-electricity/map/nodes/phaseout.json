@@ -1,0 +1,12 @@
+{
+  "id": "phaseout",
+  "title": "Retire or repurpose fossil power plants",
+  "type": "subgoal",
+  "logic": "AND",
+  "children": [
+    "coal_exit",
+    "gas_backup"
+  ],
+  "status": "open",
+  "description": "New clean capacity has to replace fossil generation, not run alongside it."
+}

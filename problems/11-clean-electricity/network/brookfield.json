@@ -1,0 +1,12 @@
+{
+  "id": "brookfield",
+  "name": "Brookfield",
+  "kind": "investor",
+  "description": "Asset manager and one of the largest owners of renewable power assets.",
+  "country": "Canada",
+  "url": "https://www.brookfield.com",
+  "works_on": [
+    "supply"
+  ],
+  "links": []
+}

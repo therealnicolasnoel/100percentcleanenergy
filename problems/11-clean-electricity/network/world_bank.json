@@ -1,0 +1,12 @@
+{
+  "id": "world_bank",
+  "name": "World Bank",
+  "kind": "funder",
+  "description": "Multilateral lender for power sector investment in developing economies.",
+  "country": "United States (HQ)",
+  "url": "https://www.worldbank.org",
+  "works_on": [
+    "finance"
+  ],
+  "links": []
+}

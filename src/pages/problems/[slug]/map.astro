@@ -1,0 +1,26 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import ProblemHeader from '../../../components/ProblemHeader.astro';
+import TreeMap from '../../../components/TreeMap.astro';
+import NoData from '../../../components/NoData.astro';
+import { activeProblems } from '../../../data/problems';
+import { getProblemData } from '../../../lib/problemData';
+import { getReportsFor } from '../../../lib/reports';
+
+export function getStaticPaths() {
+  return activeProblems.map((problem) => ({ params: { slug: problem.slug }, props: { problem } }));
+}
+const { problem } = Astro.props;
+const data = await getProblemData(problem);
+const reports = await getReportsFor(problem);
+---
+<BaseLayout title={`Tree map · ${problem.number}. ${problem.title}`}>
+  <div class="wide">
+    <ProblemHeader problem={problem} current="map" size="l" counts={{ reports: reports.length, steps: data?.order.length, organisations: data?.actors.length }} />
+    {data ? <TreeMap data={data} problem={problem} /> : <NoData problem={problem} what="map" />}
+  </div>
+</BaseLayout>
+<style>
+  .wide { max-width: 1600px; margin: 0 auto; padding: 0 var(--space-12); }
+  @media (max-width: 720px) { .wide { padding: 0 var(--space-4); } }
+</style>

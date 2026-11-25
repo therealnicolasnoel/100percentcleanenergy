@@ -1,0 +1,13 @@
+{
+  "id": "geapp",
+  "name": "Global Energy Alliance for People and Planet",
+  "kind": "funder",
+  "description": "Philanthropic alliance funding clean power and coal transition in emerging economies.",
+  "country": "United States",
+  "url": "https://energyalliance.org",
+  "works_on": [
+    "finance",
+    "coal_exit"
+  ],
+  "links": []
+}
