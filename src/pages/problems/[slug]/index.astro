@@ -1,0 +1,13 @@
+---
+import ProblemLayout from '../../../layouts/ProblemLayout.astro';
+import { activeProblems } from '../../../data/problems';
+import { getReportsFor } from '../../../lib/reports';
+
+export function getStaticPaths() {
+  return activeProblems.map((problem) => ({ params: { slug: problem.slug }, props: { problem } }));
+}
+
+const { problem } = Astro.props;
+const reports = await getReportsFor(problem);
+---
+<ProblemLayout problem={problem} reports={reports} />

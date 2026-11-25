@@ -1,0 +1,14 @@
+---
+import Icon from './Icon.astro';
+interface Props { title: string; publisher?: string; year?: number; url?: string }
+const { title, publisher, year, url } = Astro.props;
+const label = [publisher ?? title, year].filter(Boolean).join(' · ');
+const Tag = url ? 'a' : 'span';
+---
+<Tag class="chip data-sm" href={url} title={title} target={url ? '_blank' : undefined} rel={url ? 'noopener' : undefined}>
+  <Icon name="doc" size={12} />{label}
+</Tag>
+<style>
+  .chip { display: inline-flex; align-items: center; gap: var(--space-1); border-radius: var(--radius-pill); background: var(--surface-2); color: var(--ink-muted); padding: var(--space-1) var(--space-3); text-decoration: none; max-width: 100%; }
+  a.chip:hover { color: var(--ink); }
+</style>

@@ -1,0 +1,21 @@
+---
+import { render } from 'astro:content';
+import ReportLayout from '../../../layouts/ReportLayout.astro';
+import { problems } from '../../../data/problems';
+import { getReports, reportFolder, reportSlug } from '../../../lib/reports';
+
+export async function getStaticPaths() {
+  const reports = await getReports();
+  return reports.map((report) => {
+    const problem = problems.find((p) => p.number === report.data.problem)!;
+    const others = reports.filter((r) => r.data.problem === problem.number && r.id !== report.id);
+    return { params: { slug: reportFolder(report), report: reportSlug(report) }, props: { report, problem, others } };
+  });
+}
+
+const { report, problem, others } = Astro.props;
+const { Content, headings } = await render(report);
+---
+<ReportLayout report={report} problem={problem} headings={headings} others={others}>
+  <Content />
+</ReportLayout>

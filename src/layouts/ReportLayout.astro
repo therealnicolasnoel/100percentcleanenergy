@@ -1,0 +1,128 @@
+---
+/**
+ * The universal report page: contents rail, report text, and an inspector
+ * with review status, sources and the report's GitHub history.
+ */
+import type { MarkdownHeading } from 'astro';
+import BaseLayout from './BaseLayout.astro';
+import ReviewBadge from '../components/ReviewBadge.astro';
+import SourceChip from '../components/SourceChip.astro';
+import Icon from '../components/Icon.astro';
+import type { Problem } from '../data/problems';
+import { reportFile, reportPath, type Report } from '../lib/reports';
+import { gh, url, formatDate } from '../site.config';
+
+interface Props { report: Report; problem: Problem; headings: MarkdownHeading[]; others: Report[] }
+const { report, problem, headings, others } = Astro.props;
+const d = report.data;
+const file = reportFile(report);
+const toc = headings.filter((h) => h.depth === 2);
+const challengeUrl = gh.issues(
+  `Challenge: ${d.title}`,
+  `Report: ${file}\n\nWhich claim is wrong or unsupported, and what is the evidence?\n`,
+);
+---
+<BaseLayout title={d.title} description={d.summary}>
+  <div class="shell">
+    <nav class="rail" aria-label="Contents">
+      <a class="body-sm back" href={url(`/problems/${problem.slug}/`)}>
+        <span class="data-sm">Problem {problem.number}</span><br />{problem.title}
+      </a>
+      {toc.length > 0 && (
+        <>
+          <p class="label muted">Contents</p>
+          <ol class="toc body-sm">
+            {toc.map((h) => <li><a href={`#${h.slug}`}>{h.text}</a></li>)}
+          </ol>
+        </>
+      )}
+      {others.length > 0 && (
+        <>
+          <p class="label muted">Other reports</p>
+          <ul class="toc body-sm">
+            {others.map((o) => <li><a href={url(reportPath(o))}>{o.data.title}</a> <span class="data-sm muted">{formatDate(o.data.date)}</span></li>)}
+          </ul>
+        </>
+      )}
+    </nav>
+
+    <article class="canvas">
+      <header class="head">
+        <p class="label muted"><span class="data">Problem {problem.number}</span> · {problem.category} · Report</p>
+        <h1 class="display-l">{d.title}</h1>
+        <p class="body summary">{d.summary}</p>
+        {d.headline && (
+          <div class="headline">
+            <p class="numeral-xl">{d.headline.value}</p>
+            <p class="label muted">{d.headline.label}</p>
+          </div>
+        )}
+      </header>
+      <div class="prose body"><slot /></div>
+    </article>
+
+    <aside class="inspector" aria-label="About this report">
+      <section>
+        <p class="label muted">Review</p>
+        <ReviewBadge status={d.status} reviewers={d.reviewers} />
+        {d.confidence && <p class="body-sm">Confidence: {d.confidence}</p>}
+      </section>
+      <section>
+        <p class="label muted">Authors</p>
+        <p class="body-sm">{d.authors.join(', ')}</p>
+      </section>
+      <section>
+        <p class="label muted">Dates</p>
+        <p class="data">Published {formatDate(d.date)}</p>
+        {d.updated && <p class="data">Updated {formatDate(d.updated)}</p>}
+      </section>
+      <section>
+        <p class="label muted">Sources <span class="data-sm">{d.sources.length}</span></p>
+        {d.sources.length === 0
+          ? <span class="unsupported label"><Icon name="flag" size={12} />Unsupported: no sources listed</span>
+          : <div class="chips">{d.sources.map((s) => <SourceChip {...s} />)}</div>}
+      </section>
+      {d.tags.length > 0 && (
+        <section>
+          <p class="label muted">Tags</p>
+          <div class="chips">{d.tags.map((t) => <span class="label tag">{t}</span>)}</div>
+        </section>
+      )}
+      <section class="gh">
+        <p class="label muted">On GitHub</p>
+        <a class="btn btn-secondary" href={gh.edit(file)}><Icon name="pencil" />Propose an edit</a>
+        <a class="btn btn-ghost" href={gh.history(file)}><Icon name="history" />History</a>
+        <a class="btn btn-ghost" href={challengeUrl}><Icon name="flag" />Challenge a claim</a>
+        <p class="data-sm muted file">{file}</p>
+      </section>
+    </aside>
+  </div>
+</BaseLayout>
+<style>
+  .shell { display: grid; grid-template-columns: 240px minmax(0, 1fr) 280px; min-height: calc(100vh - 57px); }
+  .rail { background: var(--surface-2); border-right: var(--stroke-hairline) solid var(--line); padding: var(--space-6) var(--space-4); display: flex; flex-direction: column; gap: var(--space-3); }
+  .rail .back { color: var(--ink); text-decoration: none; padding-bottom: var(--space-4); border-bottom: var(--stroke-hairline) solid var(--line); }
+  .rail .back:hover { color: var(--signal); }
+  .toc { list-style: none; margin: 0 0 var(--space-4); padding: 0; display: grid; gap: var(--space-2); }
+  .toc a { color: var(--ink); text-decoration: none; }
+  .toc a:hover { color: var(--signal); text-decoration: underline; }
+  .canvas { padding: var(--space-12); min-width: 0; }
+  .head { display: grid; gap: var(--space-3); max-width: 68ch; margin-bottom: var(--space-4); }
+  .summary { color: var(--ink-muted); }
+  .headline { margin-top: var(--space-4); padding-top: var(--space-4); border-top: var(--stroke-hairline) solid var(--line); }
+  .inspector { background: var(--surface-1); border-left: var(--stroke-hairline) solid var(--line); padding: var(--space-6) var(--space-4); display: flex; flex-direction: column; gap: var(--space-6); }
+  .inspector section { display: grid; gap: var(--space-2); justify-items: start; }
+  .chips { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .unsupported { display: inline-flex; align-items: center; gap: var(--space-1); color: var(--caution); background: var(--caution-tint); border-radius: var(--radius-pill); padding: var(--space-1) var(--space-3); }
+  .gh .btn { width: 100%; }
+  .file { word-break: break-all; }
+  @media (max-width: 1100px) {
+    .shell { grid-template-columns: minmax(0, 1fr) 280px; }
+    .rail { display: none; }
+  }
+  @media (max-width: 760px) {
+    .shell { grid-template-columns: 1fr; }
+    .canvas { padding: var(--space-6) var(--space-4); }
+    .inspector { border-left: 0; border-top: var(--stroke-hairline) solid var(--line); }
+  }
+</style>

@@ -1,0 +1,25 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import ReviewBadge from './ReviewBadge.astro';
+import { url, formatDate } from '../site.config';
+import { reportPath } from '../lib/reports';
+interface Props { report: CollectionEntry<'reports'>; latest?: boolean }
+const { report, latest = false } = Astro.props;
+const d = report.data;
+---
+<article class="card">
+  <div class="meta">
+    <span class="data muted">{formatDate(d.date)}</span>
+    {latest && <span class="label tag">Latest</span>}
+    <ReviewBadge status={d.status} reviewers={d.reviewers} />
+  </div>
+  <h3 class="subheading"><a href={url(reportPath(report))}>{d.title}</a></h3>
+  <p class="body muted">{d.summary}</p>
+  <p class="body-sm muted">{d.authors.join(', ')}</p>
+</article>
+<style>
+  .card { background: var(--surface-1); border: var(--stroke-hairline) solid var(--line); border-radius: var(--radius-md); padding: var(--space-4); display: grid; gap: var(--space-2); }
+  .meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+  h3 a { color: var(--ink); text-decoration: none; }
+  h3 a:hover { color: var(--signal); text-decoration: underline; }
+</style>

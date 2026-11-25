@@ -1,0 +1,10 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { url } from '../site.config';
+---
+<BaseLayout title="Not found">
+  <div class="wrap" style="padding-top: var(--space-16)">
+    <h1 class="display-l">We couldn't find that page.</h1>
+    <p class="body" style="margin-top: var(--space-4)">It may be a problem that isn't open for reports yet. <a href={url('/')}>See all 100 problems</a>.</p>
+  </div>
+</BaseLayout>

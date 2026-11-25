@@ -1,0 +1,60 @@
+---
+import '../styles/global.css';
+import Icon from '../components/Icon.astro';
+import { site, url } from '../site.config';
+interface Props { title?: string; description?: string }
+const { title, description = site.description } = Astro.props;
+const fullTitle = title ? `${title} · ${site.name}` : site.name;
+---
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="icon" href={url('/favicon.svg')} type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:wght@400;600&display=swap" />
+    <script is:inline>
+      (function () {
+        var t = null;
+        try { t = localStorage.getItem('theme'); } catch (e) {}
+        if (!t && window.matchMedia('(prefers-color-scheme: dark)').matches) t = 'dark';
+        document.documentElement.setAttribute('data-theme', t === 'dark' ? 'dark' : 'light');
+      })();
+    </script>
+  </head>
+  <body>
+    <header class="top">
+      <div class="wrap bar">
+        <a class="heading name" href={url('/')}>{site.name}</a>
+        <nav class="nav">
+          <a class="btn btn-ghost" href={site.repoUrl}><Icon name="github" />GitHub</a>
+          <button class="btn btn-ghost" id="theme" type="button" aria-label="Switch light or dark theme">Theme</button>
+        </nav>
+      </div>
+    </header>
+    <main><slot /></main>
+    <footer class="foot">
+      <div class="wrap body-sm muted">
+        Every report is a Markdown file in <a href={site.repoUrl}>{site.repo}</a>. Every change is a commit you can cite.
+      </div>
+    </footer>
+    <script is:inline>
+      document.getElementById('theme').addEventListener('click', function () {
+        var next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', next);
+        try { localStorage.setItem('theme', next); } catch (e) {}
+      });
+    </script>
+  </body>
+</html>
+<style>
+  .top { border-bottom: var(--stroke-hairline) solid var(--line); background: var(--surface-0); }
+  .bar { display: flex; align-items: center; justify-content: space-between; min-height: 56px; gap: var(--space-4); }
+  .name { color: var(--ink); text-decoration: none; }
+  .nav { display: flex; gap: var(--space-1); }
+  .foot { border-top: var(--stroke-hairline) solid var(--line); margin-top: var(--space-16); padding: var(--space-8) 0; }
+</style>

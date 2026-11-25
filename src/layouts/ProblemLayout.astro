@@ -1,0 +1,102 @@
+---
+/**
+ * The universal problem page. Every problem, from malaria to clean power,
+ * renders through this one layout; only the data changes.
+ */
+import BaseLayout from './BaseLayout.astro';
+import ReportCard from '../components/ReportCard.astro';
+import ReviewBadge from '../components/ReviewBadge.astro';
+import Icon from '../components/Icon.astro';
+import type { Problem } from '../data/problems';
+import type { Report } from '../lib/reports';
+import { reportPath } from '../lib/reports';
+import { newReportUrl } from '../lib/publish';
+import { gh, url } from '../site.config';
+
+interface Props { problem: Problem; reports: Report[] }
+const { problem, reports } = Astro.props;
+const latest = reports[0];
+const withHeadline = reports.find((r) => r.data.headline);
+const folder = `reports/${problem.slug}`;
+const issueUrl = gh.issues(
+  `Problem ${problem.number}: `,
+  `Problem: ${problem.number}. ${problem.title}\n\nWhat should a report cover, or which source is missing?\n`,
+);
+---
+<BaseLayout title={`${problem.number}. ${problem.title}`} description={latest?.data.summary}>
+  <div class="wrap page">
+    <nav class="crumbs body-sm muted" aria-label="Breadcrumb">
+      <a href={url('/')}>All problems</a> / <span>{problem.category}</span>
+    </nav>
+
+    <header class="head">
+      <p class="label muted"><span class="data">Problem {problem.number}</span> · {problem.category}</p>
+      <h1 class="display-xl">{problem.title}</h1>
+    </header>
+
+    <div class="grid">
+      <div class="main">
+        <section class="headline panel" aria-label="Where it stands">
+          {withHeadline?.data.headline ? (
+            <>
+              <p class="numeral-xl">{withHeadline.data.headline.value}</p>
+              <p class="label muted">{withHeadline.data.headline.label}</p>
+              <p class="body-sm from">
+                From <a href={url(reportPath(withHeadline))}>{withHeadline.data.title}</a>
+                <ReviewBadge status={withHeadline.data.status} reviewers={withHeadline.data.reviewers} />
+              </p>
+            </>
+          ) : (
+            <p class="body muted">No report yet. We don't have a sourced figure for where this problem stands.</p>
+          )}
+        </section>
+
+        <div class="actions">
+          <a class="btn btn-primary" href={newReportUrl(problem)}><Icon name="plus" />Publish a report on GitHub</a>
+          <a class="btn btn-secondary" href={gh.tree(folder)}><Icon name="github" />Reports folder</a>
+          <a class="btn btn-ghost" href={issueUrl}>Suggest a topic or source</a>
+        </div>
+
+        <section class="reports">
+          <h2 class="heading">Reports <span class="data muted">{reports.length}</span></h2>
+          {reports.length === 0 && <p class="body muted">Nobody has published a report on this problem yet. You could be first.</p>}
+          {reports.map((r, i) => <ReportCard report={r} latest={i === 0} />)}
+        </section>
+      </div>
+
+      <aside class="side">
+        <div class="panel how">
+          <h2 class="subheading">How publishing works</h2>
+          <ol class="body-sm">
+            <li><strong>Write.</strong> "Publish a report" opens GitHub with the report template in <code class="data-sm">{folder}/</code>.</li>
+            <li><strong>Propose.</strong> Saving it there opens a pull request. The build check validates the file.</li>
+            <li><strong>Review.</strong> Reviewers comment and approve. Set <code class="data-sm">status: reviewed</code> once an expert has checked it.</li>
+            <li><strong>Publish.</strong> Merging to <code class="data-sm">main</code> rebuilds and deploys the site.</li>
+          </ol>
+        </div>
+        <div class="panel">
+          <h2 class="subheading">Every report covers</h2>
+          <ul class="body-sm muted plain">
+            <li>Where we are now</li><li>What has to be true</li><li>Main bottlenecks</li><li>Paths</li>
+            <li>What would change this assessment</li><li>What you can do</li><li>Gaps</li>
+          </ul>
+        </div>
+      </aside>
+    </div>
+  </div>
+</BaseLayout>
+<style>
+  .page { padding-top: var(--space-6); }
+  .crumbs a { color: var(--ink-muted); }
+  .head { margin: var(--space-12) 0 var(--space-8); display: grid; gap: var(--space-3); max-width: 900px; }
+  .grid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: var(--space-6); align-items: start; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } .head h1 { font-size: 32px; line-height: 38px; } }
+  .main, .side, .reports { display: grid; gap: var(--space-6); }
+  .reports { gap: var(--space-4); margin-top: var(--space-2); }
+  .headline { display: grid; gap: var(--space-1); }
+  .from { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin-top: var(--space-2); }
+  .actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .how ol { margin: var(--space-3) 0 0; padding-left: var(--space-4); display: grid; gap: var(--space-2); }
+  .plain { list-style: none; margin: var(--space-3) 0 0; padding: 0; display: grid; gap: var(--space-1); }
+  code { background: var(--surface-2); padding: 0 var(--space-1); border-radius: var(--radius-sm); }
+</style>

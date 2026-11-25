@@ -1,0 +1,17 @@
+name: Challenge a claim
+description: Point out a claim in a report that is wrong or unsupported.
+title: "Challenge: "
+labels: [challenge]
+body:
+  - type: input
+    id: report
+    attributes:
+      label: Report file or URL
+    validations:
+      required: true
+  - type: textarea
+    id: claim
+    attributes:
+      label: Which claim, and what is the evidence?
+    validations:
+      required: true

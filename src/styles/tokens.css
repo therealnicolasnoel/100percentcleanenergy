@@ -1,0 +1,85 @@
+/* Keystone Design System — generated from tokens.json */
+:root, [data-theme="light"] {
+  --surface-0: #f7f6f2;
+  --surface-1: #ffffff;
+  --surface-2: #eeece6;
+  --line: #dedbd2;
+  --line-strong: #858176;
+  --ink: #15171a;
+  --ink-muted: #585b61;
+  --signal: #c2410c;
+  --signal-hover: #a3360a;
+  --on-signal: #ffffff;
+  --signal-tint: #fae4d9;
+  --positive: #0b7564;
+  --positive-tint: #dcf0eb;
+  --caution: #8a5a00;
+  --caution-tint: #f6ead0;
+  --critical: #8c1c32;
+  --critical-tint: #f8e0e3;
+  --viz-1: #1f5fa8;
+  --viz-2: #0f7a52;
+  --viz-3: #9b4f8a;
+  --viz-4: #6d6a62;
+  --viz-band-50: rgba(194, 65, 12, 0.22);
+  --viz-band-90: rgba(194, 65, 12, 0.09);
+  --focus: var(--signal);
+  --shadow-float: 0 1px 2px rgba(21, 23, 26, 0.06), 0 8px 24px rgba(21, 23, 26, 0.10);
+}
+[data-theme="dark"] {
+  --surface-0: #0f1113;
+  --surface-1: #171a1d;
+  --surface-2: #1f2327;
+  --line: #2c3136;
+  --line-strong: #6b727a;
+  --ink: #ecebe6;
+  --ink-muted: #a2a6ab;
+  --signal: #ff7a45;
+  --signal-hover: #ff9466;
+  --on-signal: #0f1113;
+  --signal-tint: #3d2216;
+  --positive: #4fd1b8;
+  --positive-tint: #13302b;
+  --caution: #e3b341;
+  --caution-tint: #33290f;
+  --critical: #ffa3b0;
+  --critical-tint: #3a1a20;
+  --viz-1: #6fa8ef;
+  --viz-2: #55c995;
+  --viz-3: #d58bc6;
+  --viz-4: #b3b0a8;
+  --viz-band-50: rgba(255, 122, 69, 0.28);
+  --viz-band-90: rgba(255, 122, 69, 0.12);
+  --focus: var(--signal);
+  --shadow-float: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.55);
+}
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --radius-0: 0px;
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-pill: 999px;
+  --stroke-hairline: 1px;
+  --stroke-mark: 1.5px;
+  --stroke-path: 2px;
+  --font-serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --font-sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+.display-xl { font-family: var(--font-serif); font-size: 48px; line-height: 52px; font-weight: 400; letter-spacing: -0.01em; }
+.display-l { font-family: var(--font-serif); font-size: 32px; line-height: 38px; font-weight: 400; letter-spacing: -0.005em; }
+.heading { font-family: var(--font-sans); font-size: 20px; line-height: 28px; font-weight: 600; }
+.subheading { font-family: var(--font-sans); font-size: 16px; line-height: 24px; font-weight: 600; }
+.body { font-family: var(--font-sans); font-size: 15px; line-height: 24px; font-weight: 400; }
+.body-sm { font-family: var(--font-sans); font-size: 13px; line-height: 20px; font-weight: 400; }
+.label { font-family: var(--font-sans); font-size: 12px; line-height: 16px; font-weight: 500; letter-spacing: 0.01em; }
+.numeral-xl { font-family: var(--font-mono); font-size: 32px; line-height: 36px; font-weight: 500; }
+.data { font-family: var(--font-mono); font-size: 13px; line-height: 20px; font-weight: 400; }
+.data-sm { font-family: var(--font-mono); font-size: 11px; line-height: 16px; font-weight: 400; }
