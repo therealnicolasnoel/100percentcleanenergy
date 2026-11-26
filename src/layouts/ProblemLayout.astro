@@ -10,6 +10,9 @@ import ProblemHeader from '../components/ProblemHeader.astro';
 import LeadingProjects from '../components/LeadingProjects.astro';
 import Simulator from '../components/Simulator.astro';
 import ForecastGraph from '../components/ForecastGraph.astro';
+import IdeaLab from '../components/IdeaLab.astro';
+import { buildForecast } from '../lib/forecast';
+import { buildIdeaContext } from '../lib/ideation';
 import NoData from '../components/NoData.astro';
 import type { Problem } from '../data/problems';
 import type { ProblemData } from '../lib/problemData';
@@ -27,8 +30,11 @@ const base = `/problems/${problem.slug}`;
 const subs = data ? data.nodes[data.root].children : [];
 const stepCount = data ? data.order.filter((id) => data.nodes[id].type === 'step').length : 0;
 const blockers = data ? subs.filter((id) => data.nodes[id].blocker) : [];
+// Built once, shared by the forecast graph and the ideation assistant.
+const simModel = data ? buildModel(data) : null;
+const forecast = data ? buildForecast(simModel!, data) : null;
 const sim = data ? (() => {
-  const m = buildModel(data);
+  const m = simModel!;
   const withP = simulate(m, DEFAULT_SCENARIO);
   const without = simulate(m, { ...DEFAULT_SCENARIO, includeTracked: false });
   return { headline: headline(withP), with: pBy(withP, 2050), without: pBy(without, 2050) };
@@ -38,6 +44,7 @@ const byGroup = field ? GROUP_ORDER.map((g) => [g, field.orgs.filter((o) => (GRO
 const trend = field?.summary.trends[data?.root ?? ''];
 const growth = trend && trend.length > 1 && trend[0][1] ? Math.round(((trend[trend.length - 1][1] - trend[0][1]) / trend[0][1]) * 100) : null;
 const pct = (x: number) => `${Math.round(x * 100)}%`;
+const ideaCtx = data && forecast ? buildIdeaContext(data, field, rel, forecast, problem.title, problem.number) : null;
 ---
 <BaseLayout title={`${problem.number}. ${problem.title}`} description={`Projects, forecast and state of the field for: ${problem.title}`}>
   <div class="wrap">
@@ -70,12 +77,14 @@ const pct = (x: number) => `${Math.round(x * 100)}%`;
 
         <LeadingProjects data={data} problem={problem} />
 
+        <IdeaLab ctx={ideaCtx!} model={simModel!} problem={problem} />
+
         <section id="simulator" class="simsec">
           <div class="simhead">
             <h2 class="display-l">Forecast</h2>
             <p class="body muted">The different ways from today to the goal, simulated thousands of times: which projects to keep going, where new ones should start, and what each path is likely to reach.</p>
           </div>
-          <ForecastGraph data={data} problem={problem} />
+          <ForecastGraph data={data} problem={problem} forecast={forecast!} />
           <details class="own">
             <summary class="subheading">Build your own scenario</summary>
             <p class="body-sm muted">Set the target year, how often projects succeed, and how many new projects each sub-goal gets, and see the forecast change.</p>

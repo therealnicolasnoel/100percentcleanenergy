@@ -7,4 +7,9 @@ export default defineConfig({
   site: process.env.SITE_URL || 'http://localhost:4321',
   base: process.env.BASE_PATH || '/',
   trailingSlash: 'always',
+  vite: {
+    // Transformers.js loads its ONNX runtime itself; don't pre-bundle it in dev.
+    optimizeDeps: { exclude: ['@huggingface/transformers'] },
+    worker: { format: 'es' },
+  },
 });
