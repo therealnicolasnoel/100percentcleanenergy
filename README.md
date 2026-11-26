@@ -115,21 +115,6 @@ The estimates and elasticities are assumptions in the sub-goal files, so they ge
 
 Reports (`problems/<slug>/reports/`) still build at their URLs, but the overview no longer lists them: projects are the unit of action now.
 
-### Ideate (local model)
-
-The overview has an assistant for finding new projects and angles and validating ideas. It uses **LFM3-1.7B** (Liquid AI, `onnx-community/LFM3-1.7B-ONNX`, 4-bit), run in the browser by **Transformers.js 4.3.2** on WebGPU, inside a Web Worker (`src/scripts/llm-worker.ts`). Nothing typed leaves the page. The weights (about 1.1 GB) download from Hugging Face the first time and are cached by the browser; the ONNX runtime is served from this site.
-
-Why this model: among models with browser builds, it scores highest on instruction following and structured output in Liquid's published comparison (IFEval 96.7, ahead of Qwen3.5 4B and Gemma 4 E4B, which have no browser builds). It is the smallest download in its class, and its 256K-token context easily holds the whole brief. Its card says not to rely on it for long multi-step reasoning, so the numbers come from the simulator, not the model. Settings follow the model card: temperature 0.1, top-k 50, repetition penalty 1.1. "Reason first" turns on its thinking mode. Without WebGPU it can run on the CPU (q4, much slower). Licence: LFM Open License v1.0 (free below US$10M annual revenue, and for qualifying non-profits; check it for your use).
-
-What the model reads (`src/lib/ideation.ts`, shown on the page under "What the model sees"): the problem, sub-goals with estimates, generated steps, the forecast branches and where best-path starts projects, the leading and tracked projects, empty steps, who's working on it, the strongest relationships, and the state of the field (activity, trends, most-cited work, investor memos). About 22,000 characters.
-
-Modes:
-
-- **New projects**: four suggestions as JSON, each placed on a real sub-goal and step, with "Validate" and "Create on GitHub" (a prefilled `projects/<id>.json`).
-- **New angles**: missing approaches, combinations or routes, citing the brief.
-- **Validate an idea**: the model places the idea and lists its assumptions. The page then runs the Monte Carlo simulator for one and three projects like it, and finds similar tracked projects and organisations on that step. The model writes Fit, Novelty, Risks and First steps from those facts.
-- **Ask**: questions about the data, with a short chat history.
-
 ### Forecast branches
 
 Above the custom scenario sits a git-style forecast (`src/lib/forecast.ts`, computed at build time). Each branch is one way from today to the goal:

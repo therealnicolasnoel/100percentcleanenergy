@@ -6,16 +6,17 @@
  */
 import Icon from './Icon.astro';
 import { buildModel } from '../lib/simulate';
-import { buildForecast, type Branch, type Commit, type Forecast } from '../lib/forecast';
+import { buildForecast, type Branch, type Commit } from '../lib/forecast';
 import type { ProblemData } from '../lib/problemData';
 import type { Problem } from '../data/problems';
 import { gh, url } from '../site.config';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-interface Props { data: ProblemData; problem: Problem; target?: number; forecast?: Forecast }
-const { data, problem, target = 2050, forecast } = Astro.props;
-const F = forecast ?? buildForecast(buildModel(data), data, { target });
+interface Props { data: ProblemData; problem: Problem; target?: number }
+const { data, problem, target = 2050 } = Astro.props;
+const model = buildModel(data);
+const F = buildForecast(model, data, { target });
 const title = (id: string) => data.nodes[id]?.title ?? id;
 const pct = (x: number) => `${Math.round(x * 100)}%`;
 const yr = (y: number) => (Number.isFinite(y) && y < F.start + 75 ? String(Math.round(y)) : `after ${F.start + 75}`);
