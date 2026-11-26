@@ -2,19 +2,22 @@
 /** Shared header for every problem view: breadcrumb, title and view tabs. */
 import type { Problem } from '../data/problems';
 import { url } from '../site.config';
+import { getField } from '../lib/field';
 interface Props {
   problem: Problem;
-  current: 'overview' | 'map' | 'network';
+  current: 'overview' | 'map' | 'network' | 'field';
   counts?: { reports?: number; steps?: number; organisations?: number };
   /** display-xl on the overview, display-l on the dense map views. */
   size?: 'xl' | 'l';
 }
 const { problem, current, counts = {}, size = 'xl' } = Astro.props;
 const base = `/problems/${problem.slug}/`;
+const field = getField(problem.slug);
 const tabs = [
   { id: 'overview', label: 'Overview and reports', href: base, n: counts.reports },
   { id: 'map', label: 'Tree map', href: `${base}map/`, n: counts.steps },
   { id: 'network', label: "Who's working on it", href: `${base}network/`, n: counts.organisations },
+  { id: 'field', label: 'State of the field', href: `${base}field/`, n: field?.summary.totals.kept },
 ];
 ---
 <header class="ph">

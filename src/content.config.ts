@@ -78,11 +78,14 @@ const network = defineCollection({
     name: z.string(),
     /** builder: companies and developers. research: labs, universities, data groups.
      *  investor: private capital. funder: public, multilateral and philanthropic money.
+     *  incubator: incubators, accelerators and fellowships.
      *  policy: governments, regulators and intergovernmental bodies. */
-    kind: z.enum(['builder', 'research', 'investor', 'funder', 'policy']),
+    kind: z.enum(['builder', 'research', 'investor', 'funder', 'incubator', 'policy']),
     description: z.string(),
     country: z.string().optional(),
     url: z.url().optional(),
+    /** Other names the organisation appears under in papers and databases (used by the field scanner). */
+    aliases: z.array(z.string()).default([]),
     /** Ids of map nodes this organisation works on. */
     works_on: z.array(z.string()).default([]),
     /** Links to other organisations in the same network folder. */

@@ -5,6 +5,9 @@
   "description": "Intergovernmental agency providing energy data, analysis and policy advice.",
   "country": "France (HQ)",
   "url": "https://www.iea.org",
+  "aliases": [
+    "IEA"
+  ],
   "works_on": [
     "clean_power",
     "grids"

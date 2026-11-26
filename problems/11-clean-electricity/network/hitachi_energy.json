@@ -5,6 +5,10 @@
   "description": "Grid equipment, including HVDC links and transformers.",
   "country": "Switzerland",
   "url": "https://www.hitachienergy.com",
+  "aliases": [
+    "Hitachi Energy Ltd",
+    "ABB Power Grids"
+  ],
   "works_on": [
     "transmission"
   ],

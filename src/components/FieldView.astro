@@ -1,0 +1,329 @@
+---
+/**
+ * Universal "state of the field" view: what the field scanner found for a
+ * problem, laid out against the steps of its tree map.
+ */
+import Icon from './Icon.astro';
+import { GROUPS, KIND_NAME, ORG_TYPE_LABEL, NETWORK_KIND, landscape, type Field } from '../lib/field';
+import { KIND_LABEL, type ProblemData } from '../lib/problemData';
+import type { Problem } from '../data/problems';
+import { gh, url, formatDate } from '../site.config';
+
+interface Props { field: Field; data: ProblemData; problem: Problem }
+const { field, data, problem } = Astro.props;
+const { summary, records, orgs } = field;
+const L = landscape(field, data);
+const groupOf = Object.fromEntries(GROUPS.flatMap((g) => g.kinds.map((k) => [k, g.id])));
+const stepTitle = (id: string) => data.nodes[id]?.title ?? id;
+const nf = new Intl.NumberFormat('en');
+const scanned = formatDate(new Date(summary.generated_at));
+const SOURCE_NAME: Record<string, string> = { openalex: 'OpenAlex', arxiv: 'arXiv', osti: 'OSTI (US DOE)', nsf: 'NSF awards', github: 'GitHub', hackernews: 'Hacker News', feeds: 'Investor and news feeds', yc: 'Y Combinator directory', wikidata: 'Wikidata', seeds: 'Seed list' };
+
+// Sparkline geometry for papers per year.
+const SW = 96, SH = 24;
+const spark = (t: [number, number][] | null | undefined) => {
+  if (!t?.length) return null;
+  const max = Math.max(...t.map((p) => p[1]), 1);
+  const pts = t.map(([, n], i) => [2 + (i * (SW - 4)) / (t.length - 1), SH - 3 - (n / max) * (SH - 6)] as const);
+  return { d: pts.map((p) => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' '), last: pts[pts.length - 1], t, change: t[0][1] ? Math.round(((t[t.length - 1][1] - t[0][1]) / t[0][1]) * 100) : null };
+};
+
+const metric = (r: (typeof records)[number]) => {
+  const m = r.metrics;
+  if (m.citations !== undefined) return `${nf.format(Number(m.citations))} citations`;
+  if (m.stars !== undefined) return `${nf.format(Number(m.stars))} stars`;
+  if (m.points !== undefined) return `${m.points} points`;
+  if (m.amount_usd) return `$${nf.format(Number(m.amount_usd))}`;
+  if (m.batch) return `YC ${m.batch}${m.status && m.status !== 'Active' ? ` · ${m.status}` : ''}`;
+  if (m.founded) return `founded ${m.founded}`;
+  return '';
+};
+
+// Organisations found, by type, with a prefilled "add to network" file.
+const orgTypes = Object.keys(ORG_TYPE_LABEL).filter((t) => orgs.some((o) => o.type === t));
+const recById = new Map(records.map((r) => [r.id, r]));
+const slugId = (s: string) => s.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 40) || 'org';
+const addUrl = (o: (typeof orgs)[number]) => {
+  const steps = Object.keys(o.steps).filter((s) => data.nodes[s]).slice(0, 3);
+  const evidence = o.record_ids.map((id) => recById.get(id)).filter((r) => r && r.url).slice(0, 2);
+  const body = {
+    id: slugId(o.name),
+    name: o.name,
+    kind: NETWORK_KIND[o.type] ?? 'research',
+    description: `TODO: one sentence on what they do for this problem. Found by the field scanner in ${o.records} records.`,
+    ...(o.country ? { country: o.country } : {}),
+    ...(o.url ? { url: o.url } : {}),
+    works_on: steps,
+    links: [],
+    sources: evidence.map((r) => ({ title: r!.title, publisher: r!.source, ...(r!.year ? { year: r!.year } : {}), url: r!.url })),
+  };
+  return gh.newFile(`problems/${problem.slug}/network/${body.id}.json`, JSON.stringify(body, null, 2) + '\n');
+};
+const PER_TYPE = 60;
+const PAGE = 40;
+---
+<div class="fv" data-field>
+  <section class="top">
+    <div class="stats">
+      <div><p class="numeral-xl">{nf.format(summary.totals.kept)}</p><p class="label muted">items mapped to the tree</p></div>
+      <div><p class="numeral-xl">{nf.format(summary.totals.organisations)}</p><p class="label muted">organisations mentioned</p></div>
+      <div><p class="numeral-xl">{Object.keys(summary.sources).length}</p><p class="label muted">open sources</p></div>
+      <div><p class="numeral-xl">{scanned}</p><p class="label muted">last scan</p></div>
+    </div>
+    <div class="method body-sm muted">
+      <p>
+        <span class="badge label"><Icon name="dotted" size={12} />{summary.llm ? `Machine-matched, reviewed by Claude` : 'Machine-matched, not reviewed'}</span>
+        We search free, official APIs for each step's terms, keep items that name the problem's domain and at least one step, and file them under every step they match. Matching is by keywords{summary.llm ? `, then Claude dropped ${summary.llm.dropped} items it judged off-topic` : ''}, so some items will be off. Counts show activity, not quality.
+      </p>
+      <details>
+        <summary class="label">Sources and what each returned</summary>
+        <table class="src">
+          <thead><tr><th>Source</th><th class="n">Fetched</th><th class="n">Kept</th><th>Status</th></tr></thead>
+          <tbody>
+            {Object.entries(summary.sources).map(([k, v]) => (
+              <tr><td>{SOURCE_NAME[k] ?? k}</td><td class="n data">{v.fetched}</td><td class="n data">{v.kept}</td><td class="body-sm">{v.errors ? <span class="warn">{v.lastError}</span> : 'OK'}</td></tr>
+            ))}
+          </tbody>
+        </table>
+        <p class="body-sm muted">{nf.format(summary.totals.fetched)} items fetched, {nf.format(summary.totals.unique)} after merging duplicates. Dropped: {summary.totals.dropped.no_context} outside the domain, {summary.totals.dropped.no_step} matching no step. The search terms for each step are in <a href={gh.blob(`problems/${problem.slug}/scan.json`)}>scan.json</a>.</p>
+      </details>
+    </div>
+  </section>
+
+  <section class="land">
+    <h2 class="heading">Landscape</h2>
+    <p class="body-sm muted">Items per step of the tree map. A sub-goal counts everything under it. Select a number to list those items.</p>
+    <div class="scroll">
+      <table class="grid">
+        <thead>
+          <tr>
+            <th class="step">Step</th>
+            {GROUPS.map((g) => <th class="n">{g.label}</th>)}
+            <th class="trend">Papers per year</th>
+          </tr>
+        </thead>
+        <tbody>
+          {L.rows.map((row) => {
+            const n = data.nodes[row.id];
+            const s = spark(summary.trends[row.id]);
+            return (
+              <tr class:list={[{ sub: n.children.length > 0 }]}>
+                <th class="step" scope="row" style={`padding-left:${12 + L.depth[row.id] * 16}px`}>
+                  <a href={url(`/problems/${problem.slug}/map/#${row.id}`)} class="body-sm">{n.title}</a>
+                  {L.quiet.has(row.id) && <span class="quiet label">Little activity</span>}
+                </th>
+                {GROUPS.map((g) => {
+                  const c = row.counts[g.id];
+                  return (
+                    <td class="n">
+                      {c ? (
+                        <a class="cell" href={`#step=${row.id}&group=${g.id}`} data-set-step={row.id} data-set-group={g.id} title={`${c} ${g.label.toLowerCase()} for “${n.title}”`}>
+                          <span class="data">{c}</span>
+                          <span class="bar" style={`width:${Math.max(2, (c / L.max[g.id]) * 100)}%`}></span>
+                        </a>
+                      ) : <span class="data zero">0</span>}
+                    </td>
+                  );
+                })}
+                <td class="trend">
+                  {s ? (
+                    <span class="spark" title={s.t.map(([y, v]) => `${y}: ${nf.format(v)}`).join('\n')}>
+                      <svg width={SW} height={SH} role="img" aria-label={`Papers per year, ${s.t[0][0]}–${s.t[s.t.length - 1][0]}: ${s.t.map((p) => p[1]).join(', ')}`}>
+                        <polyline points={s.d} fill="none" stroke="var(--ink)" stroke-width="1.5" stroke-linejoin="round" />
+                        <circle cx={s.last[0]} cy={s.last[1]} r="2.5" fill="var(--ink)" />
+                      </svg>
+                      <span class="data-sm">{s.change === null ? '' : `${s.change > 0 ? '+' : ''}${s.change}%`}</span>
+                    </span>
+                  ) : <span class="data-sm muted">–</span>}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+    <p class="body-sm muted">Papers per year: OpenAlex works matching each step's main search, {summary.trends[data.root]?.[0]?.[0]}–{summary.trends[data.root]?.at(-1)?.[0]}; the figure is the change across that period. "Little activity" marks steps with under a third of the median step's items: neglected, or not yet well searched.</p>
+  </section>
+
+  <section class="dir" id="directory">
+    <div class="dir-head">
+      <h2 class="heading">Everything found</h2>
+      <p class="body-sm muted" data-count></p>
+    </div>
+    <div class="controls">
+      <label class="label">Step
+        <select data-step-filter>
+          <option value="">All steps</option>
+          {data.order.map((id) => <option value={id}>{' '.repeat(L.depth[id] * 2)}{stepTitle(id)}</option>)}
+        </select>
+      </label>
+      <label class="label">Search
+        <input type="search" data-search placeholder="Title, organisation, source" />
+      </label>
+      <label class="label">Sort
+        <select data-sort><option value="rank">Most relevant</option><option value="new">Newest</option></select>
+      </label>
+    </div>
+    <div class="chips" role="group" aria-label="Kind">
+      <button type="button" class="chip on" data-group="">All</button>
+      {GROUPS.map((g) => <button type="button" class="chip" data-group={g.id}>{g.label}</button>)}
+    </div>
+    <ol class="items">
+      {records.map((r, i) => (
+        <li class="item" data-steps={r.steps.join(' ')} data-group={groupOf[r.kind] ?? ''} data-rank={i} data-date={r.date ?? `${r.year ?? 0}`}
+            data-text={`${r.title} ${r.source} ${r.orgs.map((o) => o.name).join(' ')} ${r.tags.join(' ')}`.toLowerCase()} hidden={i >= PAGE}>
+          <p class="meta data-sm muted">
+            <span class="kind label">{KIND_NAME[r.kind] ?? r.kind}</span>
+            <span>{r.source}{r.also?.length ? ` + ${r.also.join(', ')}` : ''}</span>
+            {r.date && <span>{r.kind === 'company' ? '' : r.date.slice(0, 4)}</span>}
+            {metric(r) && <span>{metric(r)}</span>}
+          </p>
+          <p class="t">{r.url ? <a href={r.url} target="_blank" rel="noopener">{r.title}</a> : r.title}</p>
+          {r.summary && <p class="body-sm sum">{r.summary}</p>}
+          <p class="body-sm muted rel">
+            {r.orgs.filter((o) => o.role !== 'self').slice(0, 3).map((o) => o.name).join(' · ')}
+            {r.orgs.some((o) => o.role !== 'self') && ' — '}
+            {r.steps.map((s, j) => <>{j > 0 && ', '}<a href={url(`/problems/${problem.slug}/map/#${s}`)}>{stepTitle(s)}</a></>)}
+          </p>
+        </li>
+      ))}
+    </ol>
+    <button type="button" class="btn btn-secondary more" data-more>Show more</button>
+  </section>
+
+  <section class="orgs" id="organisations">
+    <h2 class="heading">Organisations found</h2>
+    <p class="body-sm muted">Every organisation the items mention, merged across sources, ranked by how many items they appear in. "Add to network" opens a prefilled file on GitHub; check it and write a real description before merging.</p>
+    <div class="chips" role="group" aria-label="Organisation type">
+      {orgTypes.map((t, i) => <button type="button" class:list={['chip', { on: i === 0 }]} data-org-type={t}>{ORG_TYPE_LABEL[t]} <span class="data-sm">{orgs.filter((o) => o.type === t).length}</span></button>)}
+    </div>
+    <div class="scroll">
+      <table class="ot">
+        <thead><tr><th>Organisation</th><th class="n">Items</th><th>Works on</th><th>Country</th><th>Network</th></tr></thead>
+        <tbody>
+          {orgTypes.flatMap((t, ti) => orgs.filter((o) => o.type === t).slice(0, PER_TYPE).map((o) => (
+            <tr data-type={t} hidden={ti !== 0}>
+              <td>{o.url ? <a href={o.url} target="_blank" rel="noopener">{o.name}</a> : o.name}</td>
+              <td class="n data">{o.records}</td>
+              <td class="body-sm">{Object.keys(o.steps).slice(0, 2).map(stepTitle).join('; ')}</td>
+              <td class="body-sm muted">{o.country ?? ''}</td>
+              <td class="body-sm">
+                {o.in_network
+                  ? <a href={url(`/problems/${problem.slug}/network/#${o.in_network}`)}>In network</a>
+                  : <a href={addUrl(o)} class="add" title={`Opens a new file on GitHub with kind "${NETWORK_KIND[o.type] ?? 'research'}" (${KIND_LABEL[NETWORK_KIND[o.type] ?? 'research']})`}><Icon name="plus" size={12} />Add to network</a>}
+              </td>
+            </tr>
+          )))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<script>
+  for (const root of document.querySelectorAll<HTMLElement>('[data-field]')) {
+    const PAGE = 40;
+    const items = [...root.querySelectorAll<HTMLElement>('.item')];
+    const list = root.querySelector<HTMLOListElement>('.items')!;
+    const stepSel = root.querySelector<HTMLSelectElement>('[data-step-filter]')!;
+    const search = root.querySelector<HTMLInputElement>('[data-search]')!;
+    const sort = root.querySelector<HTMLSelectElement>('[data-sort]')!;
+    const more = root.querySelector<HTMLButtonElement>('[data-more]')!;
+    const count = root.querySelector<HTMLElement>('[data-count]')!;
+    let group = '';
+    let shown = PAGE;
+    const apply = () => {
+      const step = stepSel.value, q = search.value.trim().toLowerCase();
+      const ordered = [...items].sort((a, b) => sort.value === 'new' ? (b.dataset.date! > a.dataset.date! ? 1 : -1) : Number(a.dataset.rank) - Number(b.dataset.rank));
+      ordered.forEach((el) => list.appendChild(el));
+      let n = 0;
+      for (const el of ordered) {
+        const ok = (!step || el.dataset.steps!.split(' ').includes(step)) && (!group || el.dataset.group === group) && (!q || el.dataset.text!.includes(q));
+        el.hidden = !ok || n >= shown;
+        if (ok) n++;
+      }
+      count.textContent = `Showing ${Math.min(n, shown)} of ${n}`;
+      more.hidden = n <= shown;
+      root.querySelectorAll<HTMLElement>('[data-group]').forEach((c) => c.classList.toggle('on', c.tagName === 'BUTTON' && c.dataset.group === group));
+    };
+    const reset = () => { shown = PAGE; apply(); };
+    stepSel.addEventListener('change', reset);
+    search.addEventListener('input', reset);
+    sort.addEventListener('change', reset);
+    more.addEventListener('click', () => { shown += PAGE * 2; apply(); });
+    root.addEventListener('click', (ev) => {
+      const t = ev.target as HTMLElement;
+      const chip = t.closest<HTMLElement>('button[data-group]');
+      if (chip) { group = chip.dataset.group!; reset(); return; }
+      const cell = t.closest<HTMLElement>('[data-set-step]');
+      if (cell) {
+        ev.preventDefault();
+        stepSel.value = cell.dataset.setStep!;
+        group = cell.dataset.setGroup!;
+        reset();
+        history.replaceState(null, '', `#step=${stepSel.value}&group=${group}`);
+        root.querySelector('#directory')!.scrollIntoView({ behavior: 'smooth' });
+        return;
+      }
+      const ot = t.closest<HTMLElement>('[data-org-type]');
+      if (ot) {
+        root.querySelectorAll('[data-org-type]').forEach((b) => b.classList.toggle('on', b === ot));
+        root.querySelectorAll<HTMLElement>('tr[data-type]').forEach((r) => (r.hidden = r.dataset.type !== ot.dataset.orgType));
+      }
+    });
+    const h = new URLSearchParams(location.hash.slice(1));
+    if (h.get('step') && [...stepSel.options].some((o) => o.value === h.get('step'))) stepSel.value = h.get('step')!;
+    if (h.get('group')) group = h.get('group')!;
+    apply();
+    if (h.get('step') || h.get('group')) root.querySelector('#directory')!.scrollIntoView();
+  }
+</script>
+
+<style>
+  .fv { display: grid; gap: var(--space-12); margin-top: var(--space-6); }
+  .top { display: grid; gap: var(--space-4); }
+  .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-6); }
+  @media (max-width: 720px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .method { display: grid; gap: var(--space-2); max-width: 90ch; }
+  .badge { display: inline-flex; align-items: center; gap: var(--space-1); padding: var(--space-1) var(--space-2); background: var(--surface-2); color: var(--ink-muted); border-radius: var(--radius-sm); margin-right: var(--space-2); }
+  details summary { cursor: pointer; color: var(--ink); }
+  .warn { color: var(--caution); }
+  .land, .dir, .orgs { display: grid; gap: var(--space-3); }
+  .scroll { overflow-x: auto; border: var(--stroke-hairline) solid var(--line); background: var(--surface-1); }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { padding: var(--space-2) var(--space-3); border-bottom: var(--stroke-hairline) solid var(--line); text-align: left; vertical-align: middle; }
+  thead th { background: var(--surface-2); font-size: 12px; line-height: 16px; font-weight: 500; white-space: nowrap; }
+  .n { text-align: right; font-variant-numeric: tabular-nums; }
+  .src { margin-top: var(--space-2); background: var(--surface-1); }
+  .grid .step { min-width: 280px; font-weight: 400; }
+  .grid .step a { color: var(--ink); text-decoration: none; }
+  .grid .step a:hover { color: var(--signal); text-decoration: underline; }
+  .grid tr.sub .step a { font-weight: 600; }
+  .quiet { margin-left: var(--space-2); padding: 0 var(--space-2); border-radius: var(--radius-sm); background: var(--caution-tint); color: var(--caution); white-space: nowrap; }
+  .grid td.n { min-width: 88px; }
+  .cell { display: grid; gap: 3px; justify-items: end; color: var(--ink); text-decoration: none; padding: 2px 0; }
+  .cell:hover .data { color: var(--signal); text-decoration: underline; }
+  .bar { display: block; height: 4px; background: var(--ink); border-radius: 0 2px 2px 0; opacity: 0.75; }
+  .zero { color: var(--line-strong); }
+  .trend { white-space: nowrap; }
+  .spark { display: inline-flex; align-items: center; gap: var(--space-2); }
+  .dir-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-3); flex-wrap: wrap; }
+  .controls { display: flex; flex-wrap: wrap; gap: var(--space-4); }
+  .controls label { display: grid; gap: var(--space-1); }
+  select, input[type='search'] { font: inherit; font-size: 14px; color: var(--ink); background: var(--surface-1); border: var(--stroke-hairline) solid var(--line-strong); border-radius: var(--radius-sm); padding: var(--space-2) var(--space-3); min-width: 220px; max-width: 100%; }
+  .chips { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .chip { font: inherit; font-size: 13px; color: var(--ink); background: var(--surface-1); border: var(--stroke-hairline) solid var(--line-strong); border-radius: var(--radius-sm); padding: var(--space-1) var(--space-3); cursor: pointer; }
+  .chip.on { background: var(--signal-tint); border-color: var(--signal); }
+  .items { list-style: none; margin: 0; padding: 0; border-top: var(--stroke-hairline) solid var(--line); }
+  .item { display: grid; gap: var(--space-1); padding: var(--space-3) 0; border-bottom: var(--stroke-hairline) solid var(--line); }
+  .meta { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; }
+  .kind { color: var(--ink); background: var(--surface-2); padding: 0 var(--space-2); border-radius: var(--radius-sm); }
+  .t { font-weight: 500; }
+  .t a { color: var(--ink); }
+  .t a:hover { color: var(--signal); }
+  .sum { color: var(--ink-muted); display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; max-width: 100ch; }
+  .rel a { color: var(--ink-muted); }
+  .more { justify-self: start; }
+  .ot td:first-child { font-weight: 500; }
+  .add { display: inline-flex; gap: var(--space-1); align-items: center; white-space: nowrap; }
+</style>

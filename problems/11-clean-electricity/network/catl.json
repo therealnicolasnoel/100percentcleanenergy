@@ -5,6 +5,9 @@
   "description": "Battery manufacturer, including grid-scale storage systems.",
   "country": "China",
   "url": "https://www.catl.com",
+  "aliases": [
+    "Contemporary Amperex Technology"
+  ],
   "works_on": [
     "manufacturing",
     "flexibility"

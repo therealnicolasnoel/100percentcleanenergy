@@ -9,6 +9,7 @@ import SourceChip from './SourceChip.astro';
 import Icon from './Icon.astro';
 import { layoutTree, TREE, STATUS_LABEL, KIND_LABEL, type ProblemData } from '../lib/problemData';
 import { problems, type Problem } from '../data/problems';
+import { getField, GROUPS, landscape } from '../lib/field';
 import { gh, url } from '../site.config';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -26,6 +27,9 @@ const edgePath = (from: string, to: string) => {
 };
 const typeLabel = { goal: 'Goal', subgoal: 'Sub-goal', action: 'Step' };
 const unsupported = data.order.filter((id) => !data.nodes[id].sources.length).length;
+const field = getField(problem.slug);
+const land = field ? landscape(field, data) : null;
+const activity = (id: string) => land?.rows.find((r) => r.id === id) ?? null;
 ---
 <div class="tm" data-tree data-root={data.root} data-parents={parentsJson}>
   <div class="bar">
@@ -101,6 +105,15 @@ const unsupported = data.order.filter((id) => !data.nodes[id].sources.length).le
                 ? <ul class="plain body-sm">{who.map((a) => <li><a href={url(`/problems/${problem.slug}/network/#${a.id}`)}>{a.name}</a> <span class="muted">· {KIND_LABEL[a.kind]}</span></li>)}</ul>
                 : <p class="body-sm muted">Nobody listed yet. That can mean a neglected step, or one we haven't mapped.</p>}
             </div>
+            {land && (() => {
+              const a = activity(id)!;
+              return (
+                <div class="sec"><p class="label muted">State of the field <span class="data-sm">{a.total} items</span></p>
+                  <p class="body-sm">{GROUPS.filter((g) => a.counts[g.id]).map((g) => `${a.counts[g.id]} ${g.label.toLowerCase()}`).join(' · ') || 'Nothing found yet.'}</p>
+                  {land.quiet.has(id) && <p class="body-sm muted">Little activity compared with other steps.</p>}
+                  <a class="body-sm" href={url(`/problems/${problem.slug}/field/#step=${id}`)}>See everything found for this step</a></div>
+              );
+            })()}
             {shared.length > 0 && (
               <div class="sec"><p class="label muted">Shared with</p>
                 <ul class="plain body-sm">{shared.map((p) => <li><span class="data-sm">{p.number}</span> {p.active ? <a href={url(`/problems/${p.slug}/map/`)}>{p.title}</a> : p.title}</li>)}</ul></div>

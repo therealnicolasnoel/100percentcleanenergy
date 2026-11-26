@@ -5,6 +5,9 @@
   "description": "US federal regulator; Order No. 2023 reformed how grid operators process interconnection requests.",
   "country": "United States",
   "url": "https://www.ferc.gov",
+  "aliases": [
+    "Federal Energy Regulatory Commission"
+  ],
   "works_on": [
     "queues",
     "transmission"

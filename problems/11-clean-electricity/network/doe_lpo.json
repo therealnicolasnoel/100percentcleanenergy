@@ -5,6 +5,9 @@
   "description": "Public lender for first-of-a-kind and large-scale energy projects.",
   "country": "United States",
   "url": "https://www.energy.gov/lpo",
+  "aliases": [
+    "Loan Programs Office"
+  ],
   "works_on": [
     "nuclear",
     "transmission"

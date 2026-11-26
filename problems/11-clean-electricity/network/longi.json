@@ -5,6 +5,10 @@
   "description": "Solar wafer, cell and module manufacturer.",
   "country": "China",
   "url": "https://www.longi.com",
+  "aliases": [
+    "LONGi Green Energy Technology",
+    "Longi Green Energy"
+  ],
   "works_on": [
     "manufacturing"
   ],

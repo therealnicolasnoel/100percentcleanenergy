@@ -5,6 +5,9 @@
   "description": "Philanthropic alliance funding clean power and coal transition in emerging economies.",
   "country": "United States",
   "url": "https://energyalliance.org",
+  "aliases": [
+    "GEAPP"
+  ],
   "works_on": [
     "finance",
     "coal_exit"

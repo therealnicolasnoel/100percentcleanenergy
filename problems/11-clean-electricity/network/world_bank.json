@@ -5,6 +5,10 @@
   "description": "Multilateral lender for power sector investment in developing economies.",
   "country": "United States (HQ)",
   "url": "https://www.worldbank.org",
+  "aliases": [
+    "World Bank Group",
+    "International Bank for Reconstruction and Development"
+  ],
   "works_on": [
     "finance"
   ],

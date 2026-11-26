@@ -5,6 +5,9 @@
   "description": "Multilateral bank running the Energy Transition Mechanism to retire coal plants early.",
   "country": "Philippines (HQ)",
   "url": "https://www.adb.org",
+  "aliases": [
+    "ADB"
+  ],
   "works_on": [
     "coal_exit",
     "finance"

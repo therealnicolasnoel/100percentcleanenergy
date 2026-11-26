@@ -5,6 +5,10 @@
   "description": "Energy supplier using time-of-use tariffs and its Kraken platform to shift household demand.",
   "country": "United Kingdom",
   "url": "https://octopus.energy",
+  "aliases": [
+    "Octopus Energy Group",
+    "Kraken Technologies"
+  ],
   "works_on": [
     "flexibility"
   ],

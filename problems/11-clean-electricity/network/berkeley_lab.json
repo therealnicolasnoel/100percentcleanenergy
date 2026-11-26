@@ -5,6 +5,10 @@
   "description": "US national laboratory; publishes the \"Queued Up\" analysis of interconnection queues.",
   "country": "United States",
   "url": "https://emp.lbl.gov",
+  "aliases": [
+    "Lawrence Berkeley National Laboratory",
+    "LBNL"
+  ],
   "works_on": [
     "queues",
     "transmission"

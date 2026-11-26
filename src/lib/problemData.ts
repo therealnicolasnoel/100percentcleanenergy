@@ -10,6 +10,7 @@ export const KIND_LABEL: Record<Kind, string> = {
   research: 'Research',
   investor: 'Investing',
   funder: 'Funding',
+  incubator: 'Incubating',
   policy: 'Policy',
 };
 export const KINDS = Object.keys(KIND_LABEL) as Kind[];
@@ -144,8 +145,8 @@ export function layoutTree(d: ProblemData): TreeLayout {
 /* ---------- Network layout (three columns) ---------- */
 
 export const NET = { cardW: 250, stepW: 280, colGap: 80, rowH: 52, cardH: 40, pad: 16 };
-const COLUMN: Record<Kind, 0 | 1> = { investor: 0, funder: 0, policy: 0, builder: 1, research: 1 };
-export const COLUMN_TITLES = ['Funding and policy', 'Building and research', 'Steps in the tree map'];
+const COLUMN: Record<Kind, 0 | 1> = { investor: 0, funder: 0, incubator: 0, policy: 0, builder: 1, research: 1 };
+export const COLUMN_TITLES = ['Funding, support and policy', 'Building and research', 'Steps in the tree map'];
 
 export interface NetLayout {
   width: number;

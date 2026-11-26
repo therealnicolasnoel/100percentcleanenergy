@@ -5,6 +5,9 @@
   "description": "EU public bank and a major lender to grid and renewable projects.",
   "country": "European Union",
   "url": "https://www.eib.org",
+  "aliases": [
+    "EIB"
+  ],
   "works_on": [
     "transmission",
     "supply"

@@ -5,6 +5,9 @@
   "description": "Applied solar and energy-systems research institute.",
   "country": "Germany",
   "url": "https://www.ise.fraunhofer.de",
+  "aliases": [
+    "Fraunhofer Institute for Solar Energy Systems"
+  ],
   "works_on": [
     "manufacturing",
     "flexibility"

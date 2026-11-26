@@ -5,6 +5,11 @@
   "description": "Offshore and onshore wind and solar developer.",
   "country": "Denmark",
   "url": "https://orsted.com",
+  "aliases": [
+    "Orsted",
+    "Ørsted A/S",
+    "DONG Energy"
+  ],
   "works_on": [
     "supply",
     "siting"

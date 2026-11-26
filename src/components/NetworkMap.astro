@@ -156,7 +156,7 @@ const uncovered = data.order.filter((id) => data.nodes[id].type === 'action' && 
         </tbody>
       </table>
     </div>
-    <p class="body-sm muted">Each organisation is a file in <code class="data-sm">problems/{problem.slug}/network/</code>. Kinds: building (companies and developers), research (labs and data groups), investing (private capital), funding (public, multilateral and philanthropic money), policy (governments and regulators).</p>
+    <p class="body-sm muted">Each organisation is a file in <code class="data-sm">problems/{problem.slug}/network/</code>. Kinds: building (companies and developers), research (labs and data groups), investing (private capital), funding (public, multilateral and philanthropic money), incubating (incubators and accelerators), policy (governments and regulators).</p>
   </section>
 </div>
 
@@ -245,11 +245,13 @@ const uncovered = data.order.filter((id) => data.nodes[id].type === 'action' && 
   [data-filtered='research'] .org:not([data-kind='research']),
   [data-filtered='investor'] .org:not([data-kind='investor']),
   [data-filtered='funder'] .org:not([data-kind='funder']),
+  [data-filtered='incubator'] .org:not([data-kind='incubator']),
   [data-filtered='policy'] .org:not([data-kind='policy']) { opacity: 0.15; }
   [data-filtered='builder'] .edge:not([data-kind='builder']),
   [data-filtered='research'] .edge:not([data-kind='research']),
   [data-filtered='investor'] .edge:not([data-kind='investor']),
   [data-filtered='funder'] .edge:not([data-kind='funder']),
+  [data-filtered='incubator'] .edge:not([data-kind='incubator']),
   [data-filtered='policy'] .edge:not([data-kind='policy']) { opacity: 0.05; }
   .inspector { background: var(--surface-1); border-left: var(--stroke-hairline) solid var(--line); padding: var(--space-4); overflow: auto; max-height: 80vh; }
   .pnl { display: grid; gap: var(--space-3); justify-items: start; }

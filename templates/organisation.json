@@ -5,6 +5,7 @@
   "description": "What they do on this problem, in one sentence.",
   "country": "Country",
   "url": "https://example.org",
+  "aliases": [],
   "works_on": [],
   "links": [],
   "sources": []

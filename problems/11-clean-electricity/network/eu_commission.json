@@ -5,6 +5,9 @@
   "description": "Proposed the EU Grid Action Plan (2023) to speed up grid investment and permitting.",
   "country": "European Union",
   "url": "https://energy.ec.europa.eu",
+  "aliases": [
+    "European Union"
+  ],
   "works_on": [
     "transmission",
     "siting"
