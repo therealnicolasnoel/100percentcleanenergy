@@ -1,0 +1,498 @@
+{
+  "generated_at": "2026-11-26T13:25:38.261Z",
+  "steps": [
+    {
+      "id": "t12838",
+      "parent": "supply",
+      "title": "Photovoltaic Systems and Sustainability",
+      "description": "This cluster of papers focuses on the environmental impacts, life cycle assessment, energy payback time, and greenhouse gas emissions of solar energy technologies, particularly photovoltaic systems. It also explores the integration of solar panels with agriculture (agrivoltaic systems) and the recycling and end-of-life management of photovoltaic modules.",
+      "keywords": [
+        "agrivoltaics",
+        "floating photovoltaics",
+        "solar panel recycling",
+        "residential solar energy",
+        "photovoltaic installations",
+        "photovoltaic industry",
+        "energy payback time",
+        "solar energy policy",
+        "solar energy adoption",
+        "solar panel installation",
+        "utility-scale solar",
+        "solar street lighting"
+      ],
+      "topic": {
+        "id": "T12838",
+        "subfield": "Renewable Energy, Sustainability and the Environment",
+        "field": "Energy",
+        "works_count": 40572,
+        "url": "https://openalex.org/T12838"
+      },
+      "papers": 12,
+      "origin": "scanner"
+    },
+    {
+      "id": "t10680",
+      "parent": "supply",
+      "title": "Wind Energy Research and Development",
+      "description": "This cluster of papers focuses on wind energy technology, including topics such as wind turbine wakes, renewable energy sustainability indicators, Weibull distribution for wind speed analysis, offshore wind farms, tidal energy conversion systems, blade design, wind farm optimization, CFD simulation for aerodynamics, and environmental impact assessment.",
+      "keywords": [
+        "wind energy",
+        "wind turbines",
+        "wind resource assessment",
+        "vertical axis wind turbine",
+        "wind energy potential",
+        "wind turbine blades",
+        "offshore wind energy",
+        "wind turbine wakes",
+        "power coefficient",
+        "horizontal axis wind turbine",
+        "small wind turbines",
+        "tip speed ratio"
+      ],
+      "topic": {
+        "id": "T10680",
+        "subfield": "Renewable Energy, Sustainability and the Environment",
+        "field": "Energy",
+        "works_count": 112209,
+        "url": "https://openalex.org/T10680"
+      },
+      "papers": 11,
+      "origin": "scanner"
+    },
+    {
+      "id": "t12503",
+      "parent": "supply",
+      "title": "Social Acceptance of Renewable Energy",
+      "description": "This cluster of papers explores the social acceptance of renewable energy innovation, focusing on public perceptions, community attitudes, and the role of place attachment in the context of wind power and other sustainable energy technologies. It discusses factors influencing acceptance, such as NIMBYism, equity, fairness, and the impact on local communities. The research also delves into the societal and economic implications of renewable energy deployment.",
+      "keywords": [
+        "local opposition",
+        "renewable energy acceptance",
+        "solar energy adoption",
+        "energy democracy",
+        "renewable energy siting",
+        "energy citizenship",
+        "local acceptance",
+        "solar photovoltaic adoption",
+        "public support for renewable energy",
+        "community renewable energy",
+        "attitudes toward renewable energy",
+        "social acceptance of renewable energy"
+      ],
+      "topic": {
+        "id": "T12503",
+        "subfield": "Sociology and Political Science",
+        "field": "Social Sciences",
+        "works_count": 21083,
+        "url": "https://openalex.org/T12503"
+      },
+      "papers": 10,
+      "origin": "scanner"
+    },
+    {
+      "id": "t13758",
+      "parent": "supply",
+      "title": "Energy Law and Policy",
+      "description": "This cluster of papers explores the regulation and governance of emerging technologies, with a focus on technology neutrality, corporate governance in the age of AI, smart energy systems, and the intersection of law, ethics, and innovation. It delves into the challenges and dilemmas posed by the rapid advancement of technology and its implications for international law, environmental protection, and ethical considerations.",
+      "keywords": [
+        "energy law",
+        "energy regulation",
+        "utility regulation",
+        "electricity regulation",
+        "petroleum law",
+        "energy legislation",
+        "renewable energy law",
+        "oil and gas regulation",
+        "EU energy law",
+        "Federal Energy Regulatory Commission",
+        "nuclear law",
+        "natural gas regulation"
+      ],
+      "topic": {
+        "id": "T13758",
+        "subfield": "Law",
+        "field": "Social Sciences",
+        "works_count": 57445,
+        "url": "https://openalex.org/T13758"
+      },
+      "papers": 4,
+      "origin": "scanner"
+    },
+    {
+      "id": "t12414",
+      "parent": "supply",
+      "title": "Coastal and Marine Management",
+      "description": "This cluster of papers focuses on the importance of marine spatial planning and ecosystem-based management in achieving sustainable use of marine resources. It addresses topics such as integrated coastal management, ocean governance, the blue economy, cumulative impacts, stakeholder engagement, and the assessment of ecosystem health. The cluster emphasizes the need for a holistic approach to managing marine environments while considering the socioeconomic aspects and aligning with sustainable development goals.",
+      "keywords": [
+        "coastal zone management",
+        "marine protected areas",
+        "marine conservation",
+        "marine spatial planning",
+        "ocean governance",
+        "integrated coastal zone management",
+        "blue economy",
+        "marine resource management",
+        "ecosystem-based management",
+        "marine resources",
+        "coastal development",
+        "marine policy"
+      ],
+      "topic": {
+        "id": "T12414",
+        "subfield": "Management, Monitoring, Policy and Law",
+        "field": "Environmental Science",
+        "works_count": 100732,
+        "url": "https://openalex.org/T12414"
+      },
+      "papers": 4,
+      "origin": "scanner"
+    },
+    {
+      "id": "t10424",
+      "parent": "grids",
+      "title": "Electric Power System Optimization",
+      "description": "This cluster of papers focuses on the operation and optimization of electricity markets, with a particular emphasis on unit commitment, economic dispatch, renewable energy integration, market power, transmission expansion planning, stochastic optimization, wind power forecasting, ancillary services, electricity market reform, and price volatility.",
+      "keywords": [
+        "electricity market",
+        "economic dispatch",
+        "power system operation",
+        "electricity market liberalization",
+        "unit commitment",
+        "generation scheduling",
+        "electricity market design",
+        "wind power integration",
+        "electricity pricing",
+        "day-ahead market",
+        "power system planning",
+        "deregulated electricity markets"
+      ],
+      "topic": {
+        "id": "T10424",
+        "subfield": "Electrical and Electronic Engineering",
+        "field": "Engineering",
+        "works_count": 119247,
+        "url": "https://openalex.org/T10424"
+      },
+      "papers": 42,
+      "origin": "scanner"
+    },
+    {
+      "id": "t10603",
+      "parent": "grids",
+      "title": "Smart Grid Energy Management",
+      "description": "This cluster of papers focuses on demand response in smart grids, exploring topics such as energy management, electricity markets, real-time pricing, renewable energy integration, and the use of game theory for optimizing load control in smart homes. It also covers the application of demand response to achieve controllability of electric loads and the potential of peer-to-peer energy trading in microgrids.",
+      "keywords": [
+        "demand response",
+        "demand-side management",
+        "peak shaving",
+        "prosumers",
+        "non-intrusive load monitoring",
+        "home energy management systems",
+        "smart meters",
+        "time-of-use pricing",
+        "load shifting",
+        "electricity cost reduction",
+        "virtual power plants",
+        "demand-side flexibility"
+      ],
+      "topic": {
+        "id": "T10603",
+        "subfield": "Electrical and Electronic Engineering",
+        "field": "Engineering",
+        "works_count": 82437,
+        "url": "https://openalex.org/T10603"
+      },
+      "papers": 25,
+      "origin": "scanner"
+    },
+    {
+      "id": "t12451",
+      "parent": "grids",
+      "title": "Smart Grid and Power Systems",
+      "description": "This cluster of papers focuses on the technology, development, and applications of smart grid systems, including topics such as cloud computing, big data, renewable energy integration, distribution automation, intelligent control, and reliability analysis in the context of electric power systems. The papers also discuss energy efficiency and the impact of advanced metering infrastructure (AMI) on power supply.",
+      "keywords": [
+        "distribution automation",
+        "substation automation",
+        "grid modernization",
+        "smart substation",
+        "power system automation",
+        "power system communication",
+        "electricity metering",
+        "smart distribution networks",
+        "power communication network",
+        "rural power supply",
+        "power supply enterprises",
+        "electrical automation"
+      ],
+      "topic": {
+        "id": "T12451",
+        "subfield": "Electrical and Electronic Engineering",
+        "field": "Engineering",
+        "works_count": 50049,
+        "url": "https://openalex.org/T12451"
+      },
+      "papers": 7,
+      "origin": "scanner"
+    },
+    {
+      "id": "t11185",
+      "parent": "firm",
+      "title": "Integrated Energy Systems Optimization",
+      "description": "This cluster of papers focuses on the integration of renewable energy systems, including wind, water, and solar power, into existing power grids. It covers topics such as district heating, electricity storage, energy modeling, power grid flexibility, and the transition towards decarbonized energy systems.",
+      "keywords": [
+        "district heating",
+        "integrated energy systems",
+        "energy system modelling",
+        "district heating networks",
+        "energy planning",
+        "energy system optimization",
+        "power-to-gas",
+        "combined cooling, heating and power",
+        "urban energy systems",
+        "variable renewable energy",
+        "energy hub",
+        "energy scenarios"
+      ],
+      "topic": {
+        "id": "T11185",
+        "subfield": "Electrical and Electronic Engineering",
+        "field": "Engineering",
+        "works_count": 80296,
+        "url": "https://openalex.org/T11185"
+      },
+      "papers": 35,
+      "origin": "scanner"
+    },
+    {
+      "id": "t14444",
+      "parent": "firm",
+      "title": "Power Systems and Renewable Energy",
+      "description": "This cluster of papers focuses on the application of energy storage technologies, such as battery systems and pumped-storage power stations, in integrating renewable energy sources like photovoltaic and wind power into power grids. It also addresses the challenges and benefits of energy storage, including frequency regulation, grid stability, and environmental impact.",
+      "keywords": [
+        "pumped storage",
+        "compressed air energy storage",
+        "power smoothing",
+        "energy storage sizing",
+        "wind power fluctuation smoothing",
+        "electrical energy storage",
+        "electricity storage",
+        "mechanical energy storage",
+        "energy storage applications",
+        "energy storage economics",
+        "energy storage cost",
+        "energy storage policy"
+      ],
+      "topic": {
+        "id": "T14444",
+        "subfield": "Energy Engineering and Power Technology",
+        "field": "Energy",
+        "works_count": 50960,
+        "url": "https://openalex.org/T14444"
+      },
+      "papers": 26,
+      "origin": "scanner"
+    },
+    {
+      "id": "t11225",
+      "parent": "firm",
+      "title": "Geothermal Energy Systems and Applications",
+      "description": "This cluster of papers covers a wide range of topics related to geothermal energy technology and applications, including ground source heat pumps, thermal conductivity of rocks and soils, enhanced geothermal systems, energy piles, seasonal thermal energy storage, and sustainability. The papers discuss experimental evaluations, numerical simulations, performance analyses, and techno-economic appraisals of various geothermal energy systems and technologies.",
+      "keywords": [
+        "geothermal energy",
+        "ground source heat pump",
+        "geothermal reservoirs",
+        "geothermal resources",
+        "geothermal power generation",
+        "ground heat exchangers",
+        "geothermal exploration",
+        "geothermal power plants",
+        "enhanced geothermal systems",
+        "geothermal potential",
+        "borehole heat exchangers",
+        "geothermal resource assessment"
+      ],
+      "topic": {
+        "id": "T11225",
+        "subfield": "Renewable Energy, Sustainability and the Environment",
+        "field": "Energy",
+        "works_count": 69146,
+        "url": "https://openalex.org/T11225"
+      },
+      "papers": 17,
+      "origin": "scanner"
+    },
+    {
+      "id": "t10597",
+      "parent": "firm",
+      "title": "Nuclear reactor physics and engineering",
+      "description": "This cluster of papers covers advanced nuclear reactor technology, including topics such as molten salt reactors, neutron transport, Generation IV reactors, the thorium fuel cycle, and small modular reactors. It also discusses the development and application of Monte Carlo codes, lead-cooled fast reactors, transmutation processes, and nuclear data libraries.",
+      "keywords": [
+        "nuclear reactor safety",
+        "reactor physics",
+        "nuclear fuel cycle",
+        "pressurized water reactor",
+        "neutron transport",
+        "fast reactors",
+        "nuclear reactors",
+        "fast breeder reactor",
+        "high-temperature gas-cooled reactor",
+        "criticality safety",
+        "sodium-cooled fast reactor",
+        "neutron cross sections"
+      ],
+      "topic": {
+        "id": "T10597",
+        "subfield": "Nuclear Energy and Engineering",
+        "field": "Energy",
+        "works_count": 176752,
+        "url": "https://openalex.org/T10597"
+      },
+      "papers": 14,
+      "origin": "scanner"
+    },
+    {
+      "id": "t11941",
+      "parent": "firm",
+      "title": "Power System Reliability and Maintenance",
+      "description": "This cluster of papers focuses on the reliability assessment of wind power generation systems, including topics such as maintenance scheduling, probabilistic assessment, generation adequacy, security assessment, transmission planning, and the integration of energy storage. The research aims to evaluate and enhance the reliability of power systems incorporating wind energy.",
+      "keywords": [
+        "power system reliability",
+        "reliability index",
+        "distribution network reliability",
+        "SAIDI",
+        "SAIFI",
+        "power system reliability assessment",
+        "loss of load probability",
+        "IEEE Reliability Test System",
+        "expected energy not supplied",
+        "energy not supplied",
+        "sequential Monte Carlo simulation",
+        "loss of load expectation"
+      ],
+      "topic": {
+        "id": "T11941",
+        "subfield": "Safety, Risk, Reliability and Quality",
+        "field": "Engineering",
+        "works_count": 32282,
+        "url": "https://openalex.org/T11941"
+      },
+      "papers": 8,
+      "origin": "scanner"
+    },
+    {
+      "id": "t11007",
+      "parent": "firm",
+      "title": "Hybrid Renewable Energy Systems",
+      "description": "This cluster of papers focuses on the advancements, challenges, and potential of hydrogen energy systems and technologies. It covers various aspects such as renewable energy integration, electrolysis, power-to-gas technology, sustainability, energy storage, techno-economic analysis, fuel cells, and environmental impact.",
+      "keywords": [
+        "green hydrogen",
+        "hybrid renewable energy systems",
+        "water electrolysis",
+        "hydrogen economy",
+        "hydrogen energy",
+        "off-grid power supply",
+        "diesel generator",
+        "hybrid energy systems",
+        "hydrogen infrastructure",
+        "electrolyzer",
+        "levelized cost of hydrogen",
+        "power-to-gas"
+      ],
+      "topic": {
+        "id": "T11007",
+        "subfield": "Energy Engineering and Power Technology",
+        "field": "Energy",
+        "works_count": 72612,
+        "url": "https://openalex.org/T11007"
+      },
+      "papers": 4,
+      "origin": "scanner"
+    },
+    {
+      "id": "t13146",
+      "parent": "finance",
+      "title": "Sustainable Finance and Green Bonds",
+      "description": "This cluster of papers explores the impact of green bonds on climate finance, financial stability, and the transition to a low-carbon economy. It investigates the pricing of green bonds, their influence on corporate performance, and their role in financing sustainable development. The cluster also delves into the implications for monetary policy and the management of climate risks in the financial system.",
+      "keywords": [
+        "green finance",
+        "sustainable finance",
+        "green bonds",
+        "climate finance",
+        "sustainable investment",
+        "green investment",
+        "ESG investing",
+        "green banking",
+        "environmental finance",
+        "transition risk",
+        "green loans",
+        "green credit"
+      ],
+      "topic": {
+        "id": "T13146",
+        "subfield": "Finance",
+        "field": "Economics, Econometrics and Finance",
+        "works_count": 55544,
+        "url": "https://openalex.org/T13146"
+      },
+      "papers": 7,
+      "origin": "scanner"
+    },
+    {
+      "id": "t10471",
+      "parent": "phaseout",
+      "title": "Climate Change Policy and Economics",
+      "description": "This cluster of papers focuses on the economic implications of climate change policies, including the impacts of greenhouse gas emissions, energy transition, and mitigation strategies. It explores various policy instruments such as carbon pricing and examines the socioeconomic pathways related to climate change. The research also delves into the potential global warming effects and the assessment of different environmental policies.",
+      "keywords": [
+        "climate policy",
+        "emissions trading",
+        "carbon pricing",
+        "carbon tax",
+        "Kyoto Protocol",
+        "Paris Agreement",
+        "climate change negotiations",
+        "EU Emissions Trading System",
+        "climate finance",
+        "environmental taxation",
+        "Clean Development Mechanism",
+        "international climate policy"
+      ],
+      "topic": {
+        "id": "T10471",
+        "subfield": "Economics and Econometrics",
+        "field": "Economics, Econometrics and Finance",
+        "works_count": 172791,
+        "url": "https://openalex.org/T10471"
+      },
+      "papers": 13,
+      "origin": "scanner"
+    },
+    {
+      "id": "t12271",
+      "parent": "phaseout",
+      "title": "Renewable energy and sustainable power systems",
+      "description": "This cluster of papers focuses on the transition towards renewable energy sources, integration of carbon capture technologies in coal-fired power plants, energy efficiency improvements, utilization of biomass, restructuring of electricity markets, implementation of smart grids, and the economic analysis of these energy transition initiatives.",
+      "keywords": [
+        "energy statistics",
+        "small hydropower",
+        "coal-fired power generation",
+        "electricity generation costs",
+        "renewable energy potential",
+        "hydropower potential",
+        "electricity generation capacity",
+        "renewable portfolio standards",
+        "clean coal technology",
+        "power sector reform",
+        "power generation technology",
+        "electricity sector reform"
+      ],
+      "topic": {
+        "id": "T12271",
+        "subfield": "Renewable Energy, Sustainability and the Environment",
+        "field": "Energy",
+        "works_count": 105242,
+        "url": "https://openalex.org/T12271"
+      },
+      "papers": 11,
+      "origin": "scanner"
+    }
+  ]
+}

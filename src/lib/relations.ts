@@ -198,7 +198,19 @@ function rng(seed: number) { return () => ((seed = (seed * 1664525 + 1013904223)
  */
 export function layoutGraph(rel: Relations, data: ProblemData, { width = 1180, height = 900 } = {}): Graph {
   const cx = width / 2, cy = height / 2, R = Math.min(width, height) / 2 - 90;
-  const stepIds = data.order.filter((id) => rel.step_edges.some((e) => e.step === id));
+  // The ring holds the curated sub-goals; links to generated steps roll up to their sub-goal.
+  const anchor = (id: string) => { const n = data.nodes[id]; return !n || n.type === 'goal' ? null : n.type === 'step' ? n.parent! : id; };
+  const rolled = new Map<string, { source: string; step: string; weight: number }>();
+  for (const e of rel.step_edges) {
+    const a = anchor(e.step);
+    if (!a) continue;
+    const k = `${e.source}>${a}`;
+    const x = rolled.get(k) ?? { source: e.source, step: a, weight: 0 };
+    x.weight += e.weight;
+    rolled.set(k, x);
+  }
+  const stepEdges = [...rolled.values()];
+  const stepIds = data.nodes[data.root].children.filter((id) => stepEdges.some((e) => e.step === id));
   const nodes: GNode[] = stepIds.map((id, i) => {
     const a = (i / stepIds.length) * Math.PI * 2 - Math.PI / 2;
     return { id: `step:${id}`, kind: 'step', label: data.nodes[id].title, r: 5, x: cx + Math.cos(a) * R, y: cy + Math.sin(a) * R, curated: false, labelled: true };
@@ -211,7 +223,7 @@ export function layoutGraph(rel: Relations, data: ProblemData, { width = 1180, h
   const idx = new Map(nodes.map((n, i) => [n.id, i]));
   const springs: [number, number, number][] = [];
   for (const e of rel.edges) if (idx.has(e.source) && idx.has(e.target)) springs.push([idx.get(e.source)!, idx.get(e.target)!, Math.min(3, 0.6 + Math.log2(1 + e.weight) * 0.6)]);
-  for (const e of rel.step_edges) if (idx.has(e.source) && idx.has(`step:${e.step}`)) springs.push([idx.get(e.source)!, idx.get(`step:${e.step}`)!, Math.min(2.5, 0.5 + e.weight * 0.15)]);
+  for (const e of stepEdges) if (idx.has(e.source) && idx.has(`step:${e.step}`)) springs.push([idx.get(e.source)!, idx.get(`step:${e.step}`)!, Math.min(2.5, 0.5 + e.weight * 0.15)]);
 
   const N = nodes.length;
   for (let it = 0; it < 420; it++) {
@@ -260,6 +272,6 @@ export function layoutGraph(rel: Relations, data: ProblemData, { width = 1180, h
     if (n.labelled) boxes.push(b);
   }
   const edges: GEdge[] = rel.edges.filter((e) => idx.has(e.source) && idx.has(e.target));
-  for (const e of rel.step_edges) if (idx.has(e.source) && idx.has(`step:${e.step}`)) edges.push({ source: e.source, target: `step:${e.step}`, type: 'works_on', weight: e.weight, evidence: [] });
+  for (const e of stepEdges) if (idx.has(e.source) && idx.has(`step:${e.step}`)) edges.push({ source: e.source, target: `step:${e.step}`, type: 'works_on', weight: e.weight, evidence: [] });
   return { width, height, nodes, edges };
 }

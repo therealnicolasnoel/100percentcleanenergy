@@ -19,7 +19,7 @@ export async function search({ http, queries, cfg, since, env }) {
       filter: `from_publication_date:${since}-01-01,type:article|preprint|review|report`,
       sort: 'relevance_score:desc',
       'per-page': String(cfg.per_query ?? 25),
-      select: 'id,doi,display_name,publication_date,cited_by_count,authorships,funders,type,abstract_inverted_index,primary_location',
+      select: 'id,doi,display_name,publication_date,cited_by_count,authorships,funders,type,abstract_inverted_index,primary_location,primary_topic',
     });
     if (env.OPENALEX_API_KEY) q.set('api_key', env.OPENALEX_API_KEY);
     else if (env.OPENALEX_EMAIL) q.set('mailto', env.OPENALEX_EMAIL);
@@ -41,6 +41,7 @@ export async function search({ http, queries, cfg, since, env }) {
         orgs: [...orgs.values()].slice(0, 8),
         metrics: { citations: w.cited_by_count ?? 0 },
         tags: [w.primary_location?.source?.display_name].filter(Boolean),
+        topic: w.primary_topic ? { id: w.primary_topic.id.split('/').pop(), name: w.primary_topic.display_name, field: w.primary_topic.field?.display_name ?? null } : null,
         query, step,
       }));
     }
@@ -48,14 +49,34 @@ export async function search({ http, queries, cfg, since, env }) {
   return out;
 }
 
-/** Papers per year for a query: a cheap activity signal per step. */
-export async function trend({ http, query, env, years = 6 }) {
+/** Papers per year for a query, or for one OpenAlex topic: a cheap activity signal. */
+export async function trend({ http, query, topic, env, years = 6 }) {
   const now = new Date().getUTCFullYear();
-  const q = new URLSearchParams({ search: query, filter: `from_publication_date:${now - years}-01-01,to_publication_date:${now - 1}-12-31`, group_by: 'publication_year' });
+  const range = `from_publication_date:${now - years}-01-01,to_publication_date:${now - 1}-12-31`;
+  const q = new URLSearchParams(topic ? { filter: `primary_topic.id:${topic},${range}`, group_by: 'publication_year' } : { search: query, filter: range, group_by: 'publication_year' });
   if (env.OPENALEX_API_KEY) q.set('api_key', env.OPENALEX_API_KEY);
   else if (env.OPENALEX_EMAIL) q.set('mailto', env.OPENALEX_EMAIL);
   const d = await http.get('openalex', `https://api.openalex.org/works?${q}`);
   if (!d?.group_by) return null;
   const by = Object.fromEntries(d.group_by.map((g) => [Number(g.key), g.count]));
   return Array.from({ length: years }, (_, i) => now - years + i).map((y) => [y, by[y] ?? 0]);
+}
+
+/** One OpenAlex topic: name, description, keywords and where it sits. */
+export async function topicInfo({ http, id, env }) {
+  const q = new URLSearchParams({ select: 'id,display_name,description,keywords,subfield,field,works_count' });
+  if (env.OPENALEX_API_KEY) q.set('api_key', env.OPENALEX_API_KEY);
+  else if (env.OPENALEX_EMAIL) q.set('mailto', env.OPENALEX_EMAIL);
+  const t = await http.get('openalex', `https://api.openalex.org/topics/${id}?${q}`);
+  if (!t?.display_name) return null;
+  return {
+    id,
+    name: t.display_name,
+    description: t.description ?? '',
+    keywords: (t.keywords ?? []).map((k) => (typeof k === 'string' ? k : k.display_name)).filter(Boolean).slice(0, 12),
+    subfield: t.subfield?.display_name ?? null,
+    field: t.field?.display_name ?? null,
+    works_count: t.works_count ?? null,
+    url: `https://openalex.org/${id}`,
+  };
 }

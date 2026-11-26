@@ -20,7 +20,7 @@ const { data, problem } = Astro.props;
 const field = getField(problem.slug);
 const rel = getRelations(problem.slug);
 const orgTemplate = readFileSync(join(process.cwd(), 'templates', 'organisation.json'), 'utf8');
-const uncovered = data.order.filter((id) => data.nodes[id].type === 'action' && !data.actorsOn[id]?.length);
+const uncovered = data.order.filter((id) => data.nodes[id].type === 'subgoal' && !data.actorsOn[id]?.length);
 ---
 <div class="who" data-who>
   <div class="bar">
@@ -65,7 +65,7 @@ const uncovered = data.order.filter((id) => data.nodes[id].type === 'action' && 
       </table>
     </div>
     {uncovered.length > 0 && (
-      <p class="body-sm muted">Steps with nobody in the curated network: {uncovered.map((id, i) => <>{i > 0 && ', '}<a href={url(`/problems/${problem.slug}/map/#${id}`)}>{data.nodes[id].title}</a></>)}. Adding who works on them is a useful first contribution.</p>
+      <p class="body-sm muted">Sub-goals with nobody in the curated network: {uncovered.map((id, i) => <>{i > 0 && ', '}<a href={url(`/problems/${problem.slug}/map/#${id}`)}>{data.nodes[id].title}</a></>)}. Adding who works on them is a useful first contribution.</p>
     )}
   </section>
 </div>

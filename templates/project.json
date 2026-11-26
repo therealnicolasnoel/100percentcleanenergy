@@ -1,0 +1,13 @@
+{
+  "id": "your_project_id",
+  "title": "Project name",
+  "description": "What the project does and what it changes for this sub-goal, in two sentences.",
+  "subgoal": "",
+  "step": "",
+  "url": "https://example.org",
+  "status": "idea",
+  "looking_for": ["What help you need, for example: data engineers, a pilot utility, funding"],
+  "organisations": [],
+  "contact": "How people can reach you (a GitHub handle, a public email or a website)",
+  "created_by": "Your GitHub handle"
+}

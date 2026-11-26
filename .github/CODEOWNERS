@@ -1,0 +1,12 @@
+# The parts of each problem that need the most human oversight: the fixed problem
+# statement, its curated sub-goals, and what the scanners search for. A pull request
+# touching these asks the maintainers for review. To make that review required,
+# protect main (Settings → Branches) and tick "Require review from Code Owners".
+#
+# Generated data (problems/*/field/), people's projects (problems/*/projects/) and
+# reports don't need a code owner.
+
+/src/data/problems.ts           @therealnicolasnoel
+/problems/*/keystone.json       @therealnicolasnoel
+/problems/*/map/                @therealnicolasnoel
+/problems/*/scan.json           @therealnicolasnoel

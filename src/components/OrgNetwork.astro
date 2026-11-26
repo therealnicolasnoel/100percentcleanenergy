@@ -55,7 +55,7 @@ const shape = (n: (typeof G.nodes)[number]) => {
           {GROUP_LABEL[g]}
         </button>
       ))}
-      <span class="lg static"><svg width="14" height="14" aria-hidden="true"><rect x="2" y="2" width="10" height="10" class="mk step" /></svg>Step of the tree</span>
+      <span class="lg static"><svg width="14" height="14" aria-hidden="true"><rect x="2" y="2" width="10" height="10" class="mk step" /></svg>Sub-goal</span>
       <span class="lg static"><svg width="14" height="14" aria-hidden="true"><circle cx="7" cy="7" r="5" class="mk research" /><circle cx="7" cy="7" r="6.3" class="ring" /></svg>In the curated network</span>
     </div>
     <div class="filters body-sm" role="group" aria-label="Relationship types">
@@ -99,7 +99,7 @@ const shape = (n: (typeof G.nodes)[number]) => {
       <section data-panel="" class="pnl">
         <p class="label muted">Network map</p>
         <h3 class="heading">{rel.nodes.length} organisations, {rel.edges.length} relationships</h3>
-        <p class="body-sm muted">Steps of the tree sit on the ring; organisations are pulled towards the steps they work on and the organisations they're linked to. Select one to see its relationships and the evidence for each.</p>
+        <p class="body-sm muted">The curated sub-goals sit on the ring; organisations are pulled towards the steps they work on and the organisations they're linked to. Select one to see its relationships and the evidence for each.</p>
         <ul class="plain body-sm">
           {Object.entries(rel.totals.by_type).map(([t, n]) => <li><span class="data">{n}</span> {EDGE_LABEL[t]?.[0] ?? t}</li>)}
         </ul>
@@ -141,10 +141,13 @@ const shape = (n: (typeof G.nodes)[number]) => {
       })}
       {G.nodes.filter((n) => n.kind === 'step').map((n) => {
         const id = n.id.slice(5);
-        const who = rel.step_edges.filter((e) => e.step === id).sort((a, b) => b.weight - a.weight);
+        const inSub = (s: string) => s === id || data.nodes[s]?.parent === id;
+        const whoMap = new Map<string, number>();
+        for (const e of rel.step_edges) if (inSub(e.step)) whoMap.set(e.source, (whoMap.get(e.source) ?? 0) + e.weight);
+        const who = [...whoMap].map(([source, weight]) => ({ source, weight })).sort((a, b) => b.weight - a.weight);
         return (
           <section data-panel={n.id} class="pnl" hidden>
-            <p class="label muted">Step of the tree{data.nodes[id].blocker && ' · main blocker'}</p>
+            <p class="label muted">Sub-goal{data.nodes[id].blocker && ' · main blocker'}</p>
             <h3 class="heading">{n.label}</h3>
             <div class="sec"><p class="label muted">Organisations on the map working on it <span class="data-sm">{who.length}</span></p>
               <ul class="plain body-sm">{who.slice(0, 20).map((e) => <li><a href={`#${encodeURIComponent(e.source)}`} data-goto={e.source}>{nameOf(e.source)}</a> <span class="data-sm muted">{e.weight}</span></li>)}</ul></div>

@@ -2,13 +2,26 @@
   "id": "firm",
   "title": "Firm clean power for long low-wind, low-sun periods",
   "type": "subgoal",
+  "description": "Multi-day and seasonal gaps are still mostly covered by fossil plants. Long-duration storage, new nuclear, next-generation geothermal and hydro can each close part of the gap; any combination will do.",
   "logic": "OR",
-  "children": [
-    "long_storage",
-    "nuclear",
-    "geothermal",
-    "hydro"
-  ],
+  "children": [],
   "status": "open",
-  "description": "Multi-day and seasonal gaps are still mostly covered by fossil plants. Any combination of these routes can close them."
+  "shared_with": [
+    12,
+    20
+  ],
+  "sources": [
+    {
+      "title": "The Path to a New Era for Nuclear Energy",
+      "publisher": "IEA",
+      "year": 2025,
+      "url": "https://www.iea.org/reports/the-path-to-a-new-era-for-nuclear-energy"
+    },
+    {
+      "title": "The Future of Geothermal Energy",
+      "publisher": "IEA",
+      "year": 2024,
+      "url": "https://www.iea.org/reports/the-future-of-geothermal-energy"
+    }
+  ]
 }

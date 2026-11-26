@@ -44,7 +44,7 @@ for (const slug of chosen) {
   console.log(`${slug}: scanning ${only.join(', ')}${llm ? ' + Claude review' : ''}`);
   const t = Date.now();
   const r = await runScan(dir, { only, llm, offline: !!flag('offline'), cacheDir: join(ROOT, 'scanner/.cache') });
-  console.log(`${slug}: ${r.fetched} fetched, ${r.unique} unique, ${r.kept} kept, ${r.orgs} organisations in ${Math.round((Date.now() - t) / 1000)} s`);
+  console.log(`${slug}: ${r.fetched} fetched, ${r.unique} unique, ${r.kept} kept, ${r.orgs} organisations, ${r.steps} steps, ${r.projects} projects in ${Math.round((Date.now() - t) / 1000)} s`);
   console.log(`  dropped: ${r.dropped.no_context} outside the domain, ${r.dropped.no_step} matching no step${r.llm ? `; Claude dropped ${r.llm.dropped} (~$${r.llm.usd}${r.llm.stopped ? `, stopped: ${r.llm.stopped}` : ''})` : ''}`);
   // The relationship scanner runs on the fresh field data (skip with --no-network).
   if (!flag('no-network')) r.network = (await runNetwork(dir, { offline: !!flag('offline'), cacheDir: join(ROOT, 'scanner/.cache') })).totals;
@@ -55,7 +55,7 @@ for (const slug of chosen) {
 if (value('summary')) {
   const lines = ['Automated field scan. Review the changes to `problems/*/field/` before merging.', ''];
   for (const r of report) {
-    lines.push(`### ${r.slug}`, '', `${r.kept} items kept from ${r.fetched} fetched (${r.unique} unique), ${r.orgs} organisations.`, '');
+    lines.push(`### ${r.slug}`, '', `${r.kept} items kept from ${r.fetched} fetched (${r.unique} unique), ${r.orgs} organisations, ${r.steps} steps, ${r.projects} projects.`, '');
     lines.push('| Source | Fetched | Kept |', '|---|---:|---:|', ...Object.entries(r.perSource).map(([k, v]) => `| ${k} | ${v.fetched} | ${v.kept} |`), '');
     if (r.network) lines.push(`Network: ${r.network.organisations} organisations, ${r.network.relationships} relationships (${Object.entries(r.network.by_type).map(([k, v]) => `${v} ${k}`).join(', ')}).`, '');
     if (r.llm) lines.push(`Claude review: ${r.llm.classified} classified, ${r.llm.dropped} dropped, about $${r.llm.usd}${r.llm.stopped ? ` (stopped: ${r.llm.stopped})` : ''}.`, '');

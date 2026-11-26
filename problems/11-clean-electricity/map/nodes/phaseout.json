@@ -2,11 +2,7 @@
   "id": "phaseout",
   "title": "Retire or repurpose fossil power plants",
   "type": "subgoal",
-  "logic": "AND",
-  "children": [
-    "coal_exit",
-    "gas_backup"
-  ],
-  "status": "open",
-  "description": "New clean capacity has to replace fossil generation, not run alongside it."
+  "description": "New clean capacity has to replace fossil generation, not run alongside it. Much of Asia's coal fleet is under 20 years old, and mechanisms that buy out and close plants early are being piloted; gas plants need to move to backup or clean fuels.",
+  "children": [],
+  "status": "open"
 }

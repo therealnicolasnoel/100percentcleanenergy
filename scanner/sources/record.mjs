@@ -6,7 +6,7 @@
 //       (author | owner | awardee | sponsor | funder | investor | self).
 import { clean, isoDate } from '../text.mjs';
 
-export function record({ id, source, kind, title, url, date, year, summary, orgs = [], metrics = {}, query = null, step = null, links = [], tags = [], domainScoped = false, matchText = '' }) {
+export function record({ id, source, kind, title, url, date, year, summary, orgs = [], metrics = {}, query = null, step = null, links = [], tags = [], domainScoped = false, matchText = '', topic = null }) {
   const d = isoDate(date);
   return {
     id,
@@ -21,6 +21,7 @@ export function record({ id, source, kind, title, url, date, year, summary, orgs
     metrics: Object.fromEntries(Object.entries(metrics).filter(([, v]) => v !== null && v !== undefined && v !== '')),
     tags,
     links,
+    topic,
     // Set by the pipeline:
     via: query ? [{ query, step }] : [],
     // True when the source only returns records from this problem's domain

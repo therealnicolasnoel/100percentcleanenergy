@@ -6,6 +6,8 @@ import { join } from 'node:path';
 import { Http } from './http.mjs';
 import { matchRecords, dedupe, propagateLinks } from './match.mjs';
 import { buildOrgs } from './orgs.mjs';
+import { discoverSteps, assignSteps } from './steps.mjs';
+import { scanProjects } from './projects.mjs';
 import * as openalex from './sources/openalex.mjs';
 import * as arxiv from './sources/arxiv.mjs';
 import * as osti from './sources/osti.mjs';
@@ -31,22 +33,25 @@ export async function runScan(dir, { only = SOURCE_IDS, llm = false, offline = f
   const { meta, nodes, network, scan } = loadProblem(dir);
   if (!scan) throw new Error(`${dir}/scan.json is missing. Run: npm run scan:init -- ${dir.split('/').pop()}`);
   const since = scan.since ?? new Date().getUTCFullYear() - 6;
-  const steps = Object.entries(scan.steps).map(([id, s]) => {
-    if (!nodes[id]) throw new Error(`scan.json: step "${id}" is not in map/nodes/.`);
+  // Searches run per curated sub-goal (and the root goal). Steps are discovered afterwards.
+  const subCfg = scan.subgoals ?? {};
+  const steps = Object.entries(subCfg).map(([id, s]) => {
+    if (!nodes[id]) throw new Error(`scan.json: sub-goal "${id}" is not in map/nodes/.`);
     return { id, title: nodes[id].title, description: nodes[id].description, terms: s.terms ?? [], queries: s.queries?.length ? s.queries : [nodes[id].title] };
   });
+  const subgoalIds = steps.filter((s) => s.id !== meta.root).map((s) => s.id);
   const contextTerms = scan.context_terms ?? [];
   const http = new Http({ cacheDir, offline, env });
   const q = (n) => steps.flatMap((s) => s.queries.slice(0, n).map((query) => ({ query, step: s.id })));
   const ctx = (name) => ({ http, cfg: scan.sources?.[name] ?? {}, since, env, contextTerms });
 
   const jobs = {
-    openalex: () => openalex.search({ ...ctx('openalex'), queries: q(3) }),
-    arxiv: () => arxiv.search({ ...ctx('arxiv'), queries: q(1) }),
-    osti: () => osti.search({ ...ctx('osti'), queries: q(1) }),
-    nsf: () => nsf.search({ ...ctx('nsf'), queries: q(1) }),
-    github: () => github.search({ ...ctx('github'), queries: q(1) }),
-    hackernews: () => hackernews.search({ ...ctx('hackernews'), queries: q(2) }),
+    openalex: () => openalex.search({ ...ctx('openalex'), queries: q(Infinity) }),
+    arxiv: () => arxiv.search({ ...ctx('arxiv'), queries: q(Infinity) }),
+    osti: () => osti.search({ ...ctx('osti'), queries: q(Infinity) }),
+    nsf: () => nsf.search({ ...ctx('nsf'), queries: q(Infinity) }),
+    github: () => github.search({ ...ctx('github'), queries: q(Infinity) }),
+    hackernews: () => hackernews.search({ ...ctx('hackernews'), queries: q(Infinity) }),
     feeds: () => feeds.search({ http, cfg: scan.sources?.feeds ?? [], since }),
     yc: () => yc.search({ ...ctx('yc') }),
     wikidata: () => wikidata.search({ ...ctx('wikidata') }),
@@ -86,9 +91,16 @@ export async function runScan(dir, { only = SOURCE_IDS, llm = false, offline = f
   perSource.hackernews && (perSource.hackernews.kept = kept.filter((r) => r.id.startsWith('hn:')).length);
   perSource.wikidata && (perSource.wikidata.kept = kept.filter((r) => r.id.startsWith('wikidata:') && r.source !== 'Seed list').length);
 
-  // Activity per step: papers per year in OpenAlex.
+  // Steps: the research topics that dominate each sub-goal. Records move to their step.
+  const genSteps = await discoverSteps(kept, { subgoals: subgoalIds, cfg: scan.steps ?? {}, http, env, log });
+  assignSteps(kept, genSteps);
+  // Projects: open-source projects, repositories, startups and funded research per step.
+  const proj = await scanProjects(kept, { http, cfg: scan.projects ?? {}, subgoals: steps.filter((s) => s.id !== meta.root), steps: genSteps, contextTerms, log });
+
+  // Activity per sub-goal (search) and per step (topic): papers per year in OpenAlex.
   const trends = {};
   if (only.includes('openalex')) for (const s of steps) trends[s.id] = await openalex.trend({ http, query: s.queries[0], env });
+  for (const st of genSteps) trends[st.id] = st.trend;
 
   const orgs = buildOrgs(kept, network);
   const rank = (r) => (r.metrics.citations ?? 0) / 10 + (r.metrics.stars ?? 0) / 50 + (r.metrics.points ?? 0) / 20 + r.relevance * 2 + (r.year ? (r.year - since) / 2 : 0);
@@ -97,7 +109,7 @@ export async function runScan(dir, { only = SOURCE_IDS, llm = false, offline = f
     .sort((a, b) => rank(b) - rank(a));
 
   const counts = {};
-  for (const s of steps) counts[s.id] = {};
+  for (const s of [...steps, ...genSteps]) counts[s.id] = {};
   for (const r of records) for (const s of r.steps) { counts[s] ??= {}; counts[s][r.kind] = (counts[s][r.kind] ?? 0) + 1; }
 
   const out = join(dir, 'field');
@@ -105,31 +117,35 @@ export async function runScan(dir, { only = SOURCE_IDS, llm = false, offline = f
   const generated_at = new Date().toISOString();
   writeFileSync(join(out, 'records.json'), JSON.stringify({ generated_at, records }, null, 0) + '\n');
   writeFileSync(join(out, 'organisations.json'), JSON.stringify({ generated_at, organisations: orgs }, null, 0) + '\n');
+  writeFileSync(join(out, 'steps.json'), JSON.stringify({ generated_at, steps: genSteps.map(({ trend: _t, ...s }) => s) }, null, 2) + '\n');
+  writeFileSync(join(out, 'projects.json'), JSON.stringify({ generated_at, projects: proj.projects }) + '\n');
   writeFileSync(join(out, 'summary.json'), JSON.stringify({
     generated_at,
     since,
-    totals: { fetched: raw.length, unique: unique.length, kept: records.length, organisations: orgs.length, dropped },
+    totals: { fetched: raw.length, unique: unique.length, kept: records.length, organisations: orgs.length, steps: genSteps.length, projects: proj.projects.length, dropped },
     sources: Object.fromEntries(Object.entries(perSource).map(([k, v]) => [k, { ...v, ...(http.health()[k === 'seeds' ? 'wikidata' : k] ?? {}) }])),
     steps: counts,
     trends,
     llm: llmReport,
   }, null, 2) + '\n');
-  return { fetched: raw.length, unique: unique.length, kept: records.length, orgs: orgs.length, dropped, perSource, llm: llmReport };
+  return { fetched: raw.length, unique: unique.length, kept: records.length, orgs: orgs.length, steps: genSteps.length, projects: proj.projects.length, dropped, perSource, llm: llmReport };
 }
 
 /** Writes a starting scan.json from a problem's tree. Tune the terms by hand afterwards. */
 export function initScan(dir) {
   const { nodes, meta } = loadProblem(dir);
-  const steps = {};
+  const subgoals = {};
   for (const n of Object.values(nodes)) {
     const t = n.title.toLowerCase().replace(/[^a-z0-9%\s-]/g, ' ').replace(/\s+/g, ' ').trim();
-    steps[n.id] = { terms: [t], queries: [n.title] };
+    subgoals[n.id] = { terms: [t], queries: [n.title] };
   }
   const scan = {
-    $comment: `Starter config for "${meta.title}". Replace each step's terms with specific phrases researchers and companies use, and add context_terms that mark the problem's domain.`,
+    $comment: `Starter config for "${meta.title}". Give each sub-goal the specific phrases researchers, builders and investors use for it, and add context_terms that mark the problem's domain. Steps and projects are generated from what these searches find.`,
     since: new Date().getUTCFullYear() - 6,
     context_terms: [],
-    steps,
+    subgoals,
+    steps: { per_subgoal: 6, min_papers: 4, exclude_topics: [], topic_fields: [] },
+    projects: { ost_categories: [], lf_energy: false, per_step: 12 },
     sources: { openalex: { per_query: 25 }, arxiv: { per_query: 8 }, github: { per_query: 12, min_stars: 5, topics: [] }, hackernews: { per_query: 12, min_points: 15 }, osti: { per_query: 10 }, nsf: { per_query: 8 }, yc: { tags: [] }, wikidata: { industries: {}, limit: 300 }, feeds: [] },
     seeds: [],
   };

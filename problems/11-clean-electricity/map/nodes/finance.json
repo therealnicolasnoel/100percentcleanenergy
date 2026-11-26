@@ -1,13 +1,14 @@
 {
   "id": "finance",
   "title": "Affordable capital for emerging and developing economies",
-  "type": "action",
+  "type": "subgoal",
+  "description": "The cost of capital for clean power projects in many emerging economies is two to three times that in advanced economies, which erodes the cost advantage of solar and wind.",
+  "children": [],
   "status": "open",
-  "blocker": true,
   "bottlenecks": [
     "Capital"
   ],
-  "description": "The cost of capital for clean power projects in many emerging economies is two to three times that in advanced economies, which erodes the cost advantage of solar and wind.",
+  "blocker": true,
   "sources": [
     {
       "title": "Reducing the Cost of Capital",

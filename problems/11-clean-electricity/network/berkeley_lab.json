@@ -10,8 +10,7 @@
     "LBNL"
   ],
   "works_on": [
-    "queues",
-    "transmission"
+    "grids"
   ],
   "links": []
 }

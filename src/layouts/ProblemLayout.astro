@@ -18,7 +18,9 @@ import { gh, url } from '../site.config';
 interface Props { problem: Problem; reports: Report[]; data: ProblemData | null }
 const { problem, reports, data } = Astro.props;
 const blockers = data ? data.order.filter((id) => data.nodes[id].blocker) : [];
-const uncovered = data ? data.order.filter((id) => data.nodes[id].type === 'action' && !data.actorsOn[id]?.length) : [];
+const subs = data ? data.nodes[data.root].children : [];
+const stepCount = data ? data.order.filter((id) => data.nodes[id].type === 'step').length : 0;
+const uncovered = subs.filter((id) => !data!.actorsOn[id]?.length);
 const latest = reports[0];
 const withHeadline = reports.find((r) => r.data.headline);
 const folder = `problems/${problem.slug}/reports`;
@@ -58,8 +60,8 @@ const issueUrl = gh.issues(
           <div class="two">
             <a class="panel sum" href={url(`/problems/${problem.slug}/map/`)}>
               <p class="label muted">Tree map</p>
-              <p class="subheading">{data.order.length} steps</p>
-              <p class="body-sm muted">{data.order.filter((id) => data.nodes[id].status === 'open').length} open · {data.order.filter((id) => data.nodes[id].status === 'in_progress').length} in progress · {data.order.filter((id) => ['demonstrated', 'solved'].includes(data.nodes[id].status)).length} demonstrated or solved</p>
+              <p class="subheading">{subs.length} sub-goals, {stepCount} steps, {data.projects.length} projects</p>
+              <p class="body-sm muted">Sub-goals: {subs.filter((id) => data.nodes[id].status === 'open').length} open · {subs.filter((id) => data.nodes[id].status === 'in_progress').length} in progress · {subs.filter((id) => ['demonstrated', 'solved'].includes(data.nodes[id].status)).length} demonstrated or solved. Steps and most projects come from the scanners.</p>
               {blockers.length > 0 && (
                 <div><p class="label muted">Main blockers</p><ul class="plain body-sm">{blockers.map((id) => <li>{data.nodes[id].title}</li>)}</ul></div>
               )}
@@ -69,7 +71,7 @@ const issueUrl = gh.issues(
               <p class="label muted">Who's working on it</p>
               <p class="subheading">{data.actors.length} organisations</p>
               <p class="body-sm muted">{KINDS.filter((k) => data.actors.some((a) => a.kind === k)).map((k) => `${data.actors.filter((a) => a.kind === k).length} ${KIND_LABEL[k].toLowerCase()}`).join(' · ')}</p>
-              <div><p class="label muted">Steps with nobody listed</p><p class="body-sm">{uncovered.length ? uncovered.map((id) => data.nodes[id].title).join('; ') : 'None'}</p></div>
+              <div><p class="label muted">Sub-goals with nobody in the curated network</p><p class="body-sm">{uncovered.length ? uncovered.map((id) => data.nodes[id].title).join('; ') : 'None'}</p></div>
               <span class="go body-sm">Open the network <Icon name="arrow" size={12} /></span>
             </a>
           </div>
