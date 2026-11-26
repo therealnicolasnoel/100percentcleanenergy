@@ -1,0 +1,123 @@
+---
+/**
+ * The leading ongoing projects for a problem: the main place to act. Ranked by how
+ * much a project is likely to deliver (the simulator's effort × chance of success)
+ * and by how much its sub-goal moves the forecast (the simulator's lever ranking).
+ */
+import Icon from './Icon.astro';
+import { projectWeight, projectSuccess, isOngoing, buildModel, levers, DEFAULT_SCENARIO } from '../lib/simulate';
+import type { ProblemData, Project } from '../lib/problemData';
+import type { Problem } from '../data/problems';
+import { gh, url } from '../site.config';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+interface Props { data: ProblemData; problem: Problem; target?: number; limit?: number }
+const { data, problem, target = 2050, limit = 12 } = Astro.props;
+const lv = levers(buildModel(data), DEFAULT_SCENARIO, target);
+const leverOf = Object.fromEntries(lv.map((l) => [l.id, Math.max(0, l.gain)]));
+const maxLever = Math.max(0.1, ...Object.values(leverOf));
+const rank = (p: Project) => projectWeight(p) * projectSuccess(p) * (1 + leverOf[p.subgoal] / maxLever) + (p.kind === 'user' ? 1 : 0);
+const ongoing = data.projects.filter((p) => isOngoing(p)).sort((a, b) => rank(b) - rank(a));
+// A balanced first view: no sub-goal takes more than a third of the slots.
+const top: Project[] = [];
+const per: Record<string, number> = {};
+for (const p of ongoing) {
+  if (top.length >= limit) break;
+  if ((per[p.subgoal] ?? 0) >= Math.ceil(limit / 3)) continue;
+  per[p.subgoal] = (per[p.subgoal] ?? 0) + 1;
+  top.push(p);
+}
+const rest = ongoing.filter((p) => !top.includes(p));
+const subgoals = data.nodes[data.root].children;
+const KIND: Record<Project['kind'], string> = { open_source: 'Open source', startup: 'Startup', research: 'Funded research', user: 'Community project' };
+const nf = new Intl.NumberFormat('en');
+const meta = (p: Project) => {
+  const m = p.metrics;
+  const ago = m.pushed ? Math.round((Date.now() - new Date(String(m.pushed)).getTime()) / 864e5) : null;
+  return [
+    m.stars ? `${nf.format(Number(m.stars))} stars` : '',
+    m.language ?? '',
+    ago !== null ? (ago < 31 ? 'updated this month' : `updated ${Math.round(ago / 30)} mo ago`) : '',
+    m.batch ? `YC ${m.batch}` : '',
+    m.amount_usd ? `$${nf.format(Number(m.amount_usd))} grant` : '',
+    p.status ?? '',
+  ].filter(Boolean).join(' · ');
+};
+const tmpl = JSON.parse(readFileSync(join(process.cwd(), 'templates', 'project.json'), 'utf8'));
+const createUrl = gh.newFile(`problems/${problem.slug}/projects/your_project_id.json`, JSON.stringify({ ...tmpl, subgoal: subgoals[0] }, null, 2) + '\n');
+---
+<section class="lp" data-lp>
+  <div class="lp-head">
+    <div>
+      <h2 class="display-l">Leading projects</h2>
+      <p class="body muted">{ongoing.length} ongoing projects across the tree, ranked by how much they're likely to deliver and how much their sub-goal moves the forecast. Join one, back one, or start your own.</p>
+    </div>
+    <div class="cta">
+      <a class="btn btn-primary" href={createUrl}><Icon name="plus" />Create a project</a>
+      <a class="btn btn-secondary" href={url(`/problems/${problem.slug}/map/`)}>All projects in the tree</a>
+    </div>
+  </div>
+  <div class="chips" role="group" aria-label="Sub-goal">
+    <button type="button" class="chip on" data-sub="">All</button>
+    {subgoals.map((s) => <button type="button" class="chip" data-sub={s}>{data.nodes[s].title} <span class="data-sm">{ongoing.filter((p) => p.subgoal === s).length}</span></button>)}
+  </div>
+  <ol class="cards">
+    {[...top, ...rest].map((p, i) => (
+      <li class:list={['pc', p.kind]} data-sub={p.subgoal} data-first={i < top.length ? '1' : undefined} hidden={i >= top.length}>
+        <p class="k label"><span class="tag">{KIND[p.kind]}</span><span class="muted">{p.source}</span></p>
+        <h3 class="subheading">{p.url ? <a href={p.url} target="_blank" rel="noopener">{p.title}</a> : p.title}</h3>
+        {p.description && <p class="body-sm desc">{p.description}</p>}
+        <p class="data-sm muted">{meta(p)}</p>
+        {p.looking_for && p.looking_for.length > 0 && <p class="body-sm"><strong>Looking for:</strong> {p.looking_for.join(', ')}</p>}
+        <p class="serves body-sm">
+          <a href={url(`/problems/${problem.slug}/map/#${p.subgoal}`)}>{data.nodes[p.subgoal].title}</a>
+          {p.step && <> → <a href={url(`/problems/${problem.slug}/map/#${p.step}`)}>{data.nodes[p.step].title}</a></>}
+        </p>
+        <p class="act body-sm">
+          {p.url && <a href={p.url} target="_blank" rel="noopener">{p.kind === 'open_source' ? 'Contribute' : p.kind === 'startup' ? 'Visit' : 'Open'} <Icon name="arrow" size={12} /></a>}
+          <a href={url(`/problems/${problem.slug}/map/#p:${p.key}`)}>Details</a>
+        </p>
+      </li>
+    ))}
+  </ol>
+  <p class="body-sm muted">Ranking: expected contribution (project size × chance of success, as in the simulator below) × how much five more projects on its sub-goal would raise the chance of reaching the goal by {target}. People's own projects come first. Ongoing means code pushed in the last 18 months, an operating startup, a grant from the last four years, or an active or proposed community project.</p>
+</section>
+
+<script>
+  for (const root of document.querySelectorAll<HTMLElement>('[data-lp]')) {
+    root.addEventListener('click', (ev) => {
+      const b = (ev.target as Element).closest<HTMLElement>('button[data-sub]');
+      if (!b) return;
+      const sub = b.dataset.sub!;
+      root.querySelectorAll('button[data-sub]').forEach((x) => x.classList.toggle('on', x === b));
+      let n = 0;
+      root.querySelectorAll<HTMLElement>('li[data-sub]').forEach((li) => {
+        const show = sub ? li.dataset.sub === sub && n < 12 : !!li.dataset.first;
+        if (show) n++;
+        li.hidden = !show;
+      });
+    });
+  }
+</script>
+
+<style>
+  .lp { display: grid; gap: var(--space-4); }
+  .lp-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-4); align-items: end; }
+  .lp-head > div:first-child { display: grid; gap: var(--space-2); max-width: 70ch; }
+  .cta { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+  .chips { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .chip { font: inherit; font-size: 13px; color: var(--ink); background: var(--surface-1); border: var(--stroke-hairline) solid var(--line-strong); border-radius: var(--radius-sm); padding: var(--space-1) var(--space-3); cursor: pointer; }
+  .chip.on { background: var(--signal-tint); border-color: var(--signal); }
+  .cards { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: var(--space-4); }
+  .pc { display: grid; gap: var(--space-2); align-content: start; background: var(--surface-1); border: var(--stroke-hairline) solid var(--line); border-radius: var(--radius-md); padding: var(--space-4); }
+  .pc.user { border-color: var(--ink); }
+  .k { display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap; }
+  .tag { background: var(--surface-2); padding: 0 var(--space-2); border-radius: var(--radius-sm); }
+  h3 a { color: var(--ink); }
+  h3 a:hover { color: var(--signal); }
+  .desc { color: var(--ink-muted); display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .serves a { color: var(--ink-muted); }
+  .act { display: flex; gap: var(--space-4); }
+  .act a { display: inline-flex; gap: var(--space-1); align-items: center; }
+</style>

@@ -5,6 +5,12 @@
   "description": "Clean generation has to grow faster than demand, which is rising with electrification and data centres. Solar module manufacturing is ahead of demand; wind and grid equipment supply chains are tighter, and permits and local consent slow new projects, wind in particular.",
   "children": [],
   "status": "in_progress",
+  "estimate": {
+    "p10": 10,
+    "p90": 28,
+    "p_success": 0.99
+  },
+  "elasticity": 0.35,
   "sources": [
     {
       "title": "Global Electricity Review 2025",

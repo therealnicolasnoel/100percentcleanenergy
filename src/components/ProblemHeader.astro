@@ -14,7 +14,7 @@ const { problem, current, counts = {}, size = 'xl' } = Astro.props;
 const base = `/problems/${problem.slug}/`;
 const field = getField(problem.slug);
 const tabs = [
-  { id: 'overview', label: 'Overview and reports', href: base, n: counts.reports },
+  { id: 'overview', label: 'Overview', href: base, n: undefined },
   { id: 'map', label: 'Tree map', href: `${base}map/`, n: counts.steps },
   { id: 'network', label: "Who's working on it", href: `${base}network/`, n: field ? field.summary.totals.organisations : counts.organisations },
   { id: 'field', label: 'State of the field', href: `${base}field/`, n: field?.summary.totals.kept },

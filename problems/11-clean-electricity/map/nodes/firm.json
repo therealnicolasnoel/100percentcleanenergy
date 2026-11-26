@@ -6,6 +6,12 @@
   "logic": "OR",
   "children": [],
   "status": "open",
+  "estimate": {
+    "p10": 16,
+    "p90": 50,
+    "p_success": 0.97
+  },
+  "elasticity": 0.3,
   "shared_with": [
     12,
     20

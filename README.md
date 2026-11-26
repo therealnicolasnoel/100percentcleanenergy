@@ -1,6 +1,6 @@
 # Keystone reports
 
-An Astro site that publishes reports on the 100 problems, plus a **tree map** (fixed problem → curated sub-goals → steps generated from what the scanners find → projects, scanned or created by people), a **who's working on it** page (a Sankey breakdown of every organisation by type and by step, and a network map of who funds, invests in, co-authors with or accelerates whom), and a **state of the field** page filled by an automated scanner (papers, repositories, startups, companies, investors, incubators, grants, investor memos and news, mapped to the steps). Everything is a file in this repo, so GitHub is where people write, review and publish it, and every change is a commit.
+An Astro site for the 100 problems. Each problem gets an **overview** (a summary of every section, the leading ongoing projects, and a Monte Carlo simulator of how those projects change the chance of reaching the goal), a **tree map** (fixed problem → curated sub-goals → steps generated from what the scanners find → projects), a **who's working on it** page (Sankey breakdown and network map), and a **state of the field** page filled by automated scanners. Everything is a file in this repo, so GitHub is where people change it, and every change is a commit.
 
 It starts with one problem open: **11. Generate 100% of the world's electricity from clean sources**. Every problem uses the same layouts.
 
@@ -57,7 +57,7 @@ src/
   styles/tokens.css          copied from ../DESIGN.md
 ```
 
-Each problem has four pages, all from shared layouts: `/problems/<slug>/` (overview and reports), `/problems/<slug>/map/`, `/problems/<slug>/network/` and `/problems/<slug>/field/`.
+Each problem has four pages, all from shared layouts: `/problems/<slug>/` (overview: summary, leading projects, simulator), `/problems/<slug>/map/`, `/problems/<slug>/network/` and `/problems/<slug>/field/`.
 
 ## Open another problem
 
@@ -84,7 +84,7 @@ Four levels, from most human oversight to least:
 
 **People's projects** (`templates/project.json`) need `subgoal` and may name a `step`. If a rescan removes that step, the project stays under its sub-goal and the build warns. Fields: `title`, `description`, `subgoal`, `step`, `url`, `repo`, `status` (`idea`, `active`, `paused`, `done`), `looking_for`, `organisations`, `contact`, `created_by`.
 
-Sub-goal fields: `id` (matches the file name), `title`, `type: "subgoal"`, `description`, `logic` (`OR` when any one step is enough), `status` (`open`, `in_progress`, `demonstrated`, `solved`, `impossible`), `bottlenecks`, `blocker`, `shared_with` (other problem numbers) and `sources`. A sub-goal never lists `children`: steps are generated.
+Sub-goal fields: `id` (matches the file name), `title`, `type: "subgoal"`, `description`, `logic` (`OR` when any one step is enough), `estimate` and `elasticity` (the simulator's inputs), `status` (`open`, `in_progress`, `demonstrated`, `solved`, `impossible`), `bottlenecks`, `blocker`, `shared_with` (other problem numbers) and `sources`. A sub-goal never lists `children`: steps are generated.
 
 ## Organisations (`network/<id>.json`)
 
@@ -98,6 +98,22 @@ Sub-goal fields: `id` (matches the file name), `title`, `type: "subgoal"`, `desc
 | `country`, `url`, `sources` | |
 
 The build fails, and so does the pull-request check, if a step or organisation points at an id that doesn't exist, the tree has a loop, or a step can't be reached from the root.
+
+## Overview and simulator
+
+The overview leads with four summary cards (forecast, tree map, who's working on it, state of the field). Below them come the **leading projects**: ongoing projects, ranked by expected contribution and by how much their sub-goal moves the forecast, with "Create a project". Last is the **simulator**.
+
+The simulator (`src/lib/simulate.ts`) runs 4,000 Monte Carlo futures, at build time and again in the browser whenever a control moves:
+
+- The goal is reached when every sub-goal is done. A sub-goal is done when all its steps are, or any one of them if its `logic` is `OR`.
+- Each sub-goal's time without the tracked projects is drawn from a lognormal fitted to its `estimate` (`p10`, `p90`: years from `start_year` in `keystone.json`; `p_success`: the chance it can be done at all). Steps vary a little around their sub-goal.
+- Each project succeeds or not in a run (open-source by recent activity, startups 30%, funded research 50%, people's projects by status). Successful projects add effort, which shortens their step: time × (1 + effort ÷ 5)^−`elasticity` (per sub-goal, default 0.3).
+- Scenario controls: target year, project success (pessimistic, central or optimistic), "add active projects" per sub-goal, and including or excluding the tracked projects. The page compares each scenario with the same futures without the tracked projects. Separate random streams keep scenarios comparable.
+- Output: chance of reaching the goal by each year (fan chart with 50% and 90% bands of arrival years), the lever ranking (points gained from five more projects on each sub-goal), and how often each sub-goal is the last to finish.
+
+The estimates and elasticities are assumptions in the sub-goal files, so they get code-owner review like the sub-goals. Problem 11's were drafted by AI and haven't been reviewed.
+
+Reports (`problems/<slug>/reports/`) still build at their URLs, but the overview no longer lists them: projects are the unit of action now.
 
 ## Field scanner
 

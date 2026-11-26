@@ -1,42 +1,41 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import ReviewBadge from '../components/ReviewBadge.astro';
 import Icon from '../components/Icon.astro';
 import { problems, activeProblems, categories } from '../data/problems';
-import { getReports } from '../lib/reports';
-import { site, url, formatDate } from '../site.config';
+import { getProblemData } from '../lib/problemData';
+import { buildModel, simulate, headline, DEFAULT_SCENARIO } from '../lib/simulate';
+import { site, url } from '../site.config';
 
-const reports = await getReports();
-const countFor = (n: number) => reports.filter((r) => r.data.problem === n).length;
+// Each open problem's card shows its forecast and how many projects are tracked.
+const overview = Object.fromEntries(await Promise.all(activeProblems.map(async (p) => {
+  const d = await getProblemData(p);
+  return [p.number, d ? { headline: headline(simulate(buildModel(d), DEFAULT_SCENARIO)), projects: d.projects.length, subgoals: d.nodes[d.root].children.length } : null];
+})));
 ---
 <BaseLayout>
   <div class="wrap">
     <section class="hero">
-      <h1 class="display-xl">100 problems. Open reports on each, kept in GitHub.</h1>
-      <p class="body lede muted">{site.description} We are starting with {activeProblems.length === 1 ? 'one problem' : `${activeProblems.length} problems`}. The rest open as reports arrive.</p>
+      <h1 class="display-xl">100 problems. The projects moving each one, and what they add up to.</h1>
+      <p class="body lede muted">{site.description} We are starting with {activeProblems.length === 1 ? 'one problem' : `${activeProblems.length} problems`}. The rest open one by one.</p>
     </section>
 
     <section class="open">
-      <h2 class="label muted">Open for reports</h2>
+      <h2 class="label muted">Open problems</h2>
       <div class="cards">
         {activeProblems.map((p) => {
-          const latest = reports.find((r) => r.data.problem === p.number);
+          const o = overview[p.number];
           return (
             <a class="card" href={url(`/problems/${p.slug}/`)}>
               <p class="label muted"><span class="data">Problem {p.number}</span> · {p.category}</p>
               <h3 class="heading">{p.title}</h3>
-              {latest?.data.headline && (
+              {o && (
                 <div>
-                  <p class="numeral-xl">{latest.data.headline.value}</p>
-                  <p class="label muted">{latest.data.headline.label}</p>
+                  <p class="numeral-xl">{o.headline}</p>
+                  <p class="label muted">Chance of reaching the goal, with the tracked projects (illustrative model)</p>
                 </div>
               )}
-              <div class="row">
-                <span class="data muted">{countFor(p.number)} {countFor(p.number) === 1 ? 'report' : 'reports'}</span>
-                {latest && <span class="data-sm muted">latest {formatDate(latest.data.date)}</span>}
-                {latest && <ReviewBadge status={latest.data.status} reviewers={latest.data.reviewers} />}
-              </div>
-              <span class="go body-sm">Read and publish reports <Icon name="arrow" size={12} /></span>
+              {o && <div class="row"><span class="data muted">{o.subgoals} sub-goals · {o.projects} projects</span></div>}
+              <span class="go body-sm">See the projects and forecast <Icon name="arrow" size={12} /></span>
             </a>
           );
         })}
@@ -45,7 +44,7 @@ const countFor = (n: number) => reports.filter((r) => r.data.problem === n).leng
 
     <section class="all">
       <h2 class="display-l">All 100 problems</h2>
-      <p class="body muted">Each problem gets the same page and report layout. Problems that aren't open yet are listed so you can see what's coming.</p>
+      <p class="body muted">Each problem gets the same pages: overview, tree map, who's working on it and state of the field. Problems that aren't open yet are listed so you can see what's coming.</p>
       <div class="cats">
         {categories.map((c) => (
           <div class="cat">

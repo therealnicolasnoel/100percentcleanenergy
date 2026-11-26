@@ -63,8 +63,12 @@ const nodes = defineCollection({
     bottlenecks: z.array(z.enum(['Cost', 'Capital', 'Regulation', 'Supply', 'Knowledge', 'Coordination', 'Talent', 'Demand'])).default([]),
     /** Marks one of the steps that most limits progress today. */
     blocker: z.boolean().default(false),
-    /** Optional estimate in years (P10–P90) and chance of success, as in ../github-app. */
-    estimate: z.object({ p10: z.number(), p90: z.number(), p_success: z.number().min(0).max(1) }).optional(),
+    /** Sub-goals: years from the problem's start_year to completion without the tracked
+     *  projects (P10–P90), and the chance it can be done at all. An assumption people
+     *  own; the simulator's main input. */
+    estimate: z.object({ p10: z.number().positive(), p90: z.number().positive(), p_success: z.number().min(0).max(1) }).optional(),
+    /** How strongly extra effort speeds this sub-goal up (0 = not at all, 0.5 = a lot). Default 0.3. */
+    elasticity: z.number().min(0).max(1).optional(),
     /** Another problem number this step is shared with, e.g. 12 for storage. */
     shared_with: z.array(z.number().int().min(1).max(100)).default([]),
     sources: z.array(source).default([]),

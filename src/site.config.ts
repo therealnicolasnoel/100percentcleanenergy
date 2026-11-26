@@ -4,7 +4,7 @@ const branch = import.meta.env.PUBLIC_GITHUB_BRANCH || 'main';
 
 export const site = {
   name: 'Keystone reports',
-  description: 'Open, versioned reports on the world’s 100 hardest problems. Every report lives in GitHub and every change is a commit.',
+  description: 'The world’s 100 hardest problems, broken down into sub-goals, steps and the projects moving them, with who is working on each and a forecast of where it leads. Everything lives in GitHub and every change is a commit.',
   repo,
   branch,
   repoUrl: `https://github.com/${repo}`,

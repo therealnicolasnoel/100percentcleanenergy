@@ -9,6 +9,12 @@
     "Capital"
   ],
   "blocker": true,
+  "estimate": {
+    "p10": 12,
+    "p90": 40,
+    "p_success": 0.96
+  },
+  "elasticity": 0.25,
   "sources": [
     {
       "title": "Reducing the Cost of Capital",

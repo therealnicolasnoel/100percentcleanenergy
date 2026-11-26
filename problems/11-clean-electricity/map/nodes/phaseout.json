@@ -4,5 +4,11 @@
   "type": "subgoal",
   "description": "New clean capacity has to replace fossil generation, not run alongside it. Much of Asia's coal fleet is under 20 years old, and mechanisms that buy out and close plants early are being piloted; gas plants need to move to backup or clean fuels.",
   "children": [],
-  "status": "open"
+  "status": "open",
+  "estimate": {
+    "p10": 16,
+    "p90": 45,
+    "p_success": 0.96
+  },
+  "elasticity": 0.25
 }

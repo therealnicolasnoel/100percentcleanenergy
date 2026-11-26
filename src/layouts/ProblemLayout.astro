@@ -1,124 +1,94 @@
 ---
 /**
- * The universal problem page. Every problem, from malaria to clean power,
- * renders through this one layout; only the data changes.
+ * The universal problem overview: a quick summary of every section, the leading
+ * ongoing projects (the main place to act), and the scenario simulator that shows
+ * how those projects change the chance of reaching the goal.
  */
 import BaseLayout from './BaseLayout.astro';
-import ReportCard from '../components/ReportCard.astro';
-import ReviewBadge from '../components/ReviewBadge.astro';
 import Icon from '../components/Icon.astro';
 import ProblemHeader from '../components/ProblemHeader.astro';
+import LeadingProjects from '../components/LeadingProjects.astro';
+import Simulator from '../components/Simulator.astro';
+import NoData from '../components/NoData.astro';
 import type { Problem } from '../data/problems';
-import { KIND_LABEL, KINDS, type ProblemData } from '../lib/problemData';
-import type { Report } from '../lib/reports';
-import { reportPath } from '../lib/reports';
-import { newReportUrl } from '../lib/publish';
-import { gh, url } from '../site.config';
+import type { ProblemData } from '../lib/problemData';
+import { getField } from '../lib/field';
+import { getRelations, GROUP_OF, GROUP_LABEL, GROUP_ORDER } from '../lib/relations';
+import { buildModel, simulate, headline, pBy, DEFAULT_SCENARIO } from '../lib/simulate';
+import { url } from '../site.config';
 
-interface Props { problem: Problem; reports: Report[]; data: ProblemData | null }
-const { problem, reports, data } = Astro.props;
-const blockers = data ? data.order.filter((id) => data.nodes[id].blocker) : [];
+interface Props { problem: Problem; data: ProblemData | null }
+const { problem, data } = Astro.props;
+const field = getField(problem.slug);
+const rel = getRelations(problem.slug);
+const base = `/problems/${problem.slug}`;
+
 const subs = data ? data.nodes[data.root].children : [];
 const stepCount = data ? data.order.filter((id) => data.nodes[id].type === 'step').length : 0;
-const uncovered = subs.filter((id) => !data!.actorsOn[id]?.length);
-const latest = reports[0];
-const withHeadline = reports.find((r) => r.data.headline);
-const folder = `problems/${problem.slug}/reports`;
-const issueUrl = gh.issues(
-  `Problem ${problem.number}: `,
-  `Problem: ${problem.number}. ${problem.title}\n\nWhat should a report cover, or which source is missing?\n`,
-);
+const blockers = data ? subs.filter((id) => data.nodes[id].blocker) : [];
+const sim = data ? (() => {
+  const m = buildModel(data);
+  const withP = simulate(m, DEFAULT_SCENARIO);
+  const without = simulate(m, { ...DEFAULT_SCENARIO, includeTracked: false });
+  return { headline: headline(withP), with: pBy(withP, 2050), without: pBy(without, 2050) };
+})() : null;
+const orgs = field ? field.summary.totals.organisations : data?.actors.length ?? 0;
+const byGroup = field ? GROUP_ORDER.map((g) => [g, field.orgs.filter((o) => (GROUP_OF[o.type] ?? 'policy') === g).length] as const) : [];
+const trend = field?.summary.trends[data?.root ?? ''];
+const growth = trend && trend.length > 1 && trend[0][1] ? Math.round(((trend[trend.length - 1][1] - trend[0][1]) / trend[0][1]) * 100) : null;
+const pct = (x: number) => `${Math.round(x * 100)}%`;
 ---
-<BaseLayout title={`${problem.number}. ${problem.title}`} description={latest?.data.summary}>
+<BaseLayout title={`${problem.number}. ${problem.title}`} description={`Projects, forecast and state of the field for: ${problem.title}`}>
   <div class="wrap">
-    <ProblemHeader problem={problem} current="overview" counts={{ reports: reports.length, steps: data?.order.length, organisations: data?.actors.length }} />
+    <ProblemHeader problem={problem} current="overview" counts={{ steps: data?.order.length, organisations: data?.actors.length }} />
 
-    <div class="grid">
-      <div class="main">
-        <section class="headline panel" aria-label="Where it stands">
-          {withHeadline?.data.headline ? (
-            <>
-              <p class="numeral-xl">{withHeadline.data.headline.value}</p>
-              <p class="label muted">{withHeadline.data.headline.label}</p>
-              <p class="body-sm from">
-                From <a href={url(reportPath(withHeadline))}>{withHeadline.data.title}</a>
-                <ReviewBadge status={withHeadline.data.status} reviewers={withHeadline.data.reviewers} />
-              </p>
-            </>
-          ) : (
-            <p class="body muted">No report yet. We don't have a sourced figure for where this problem stands.</p>
-          )}
+    {!data ? <NoData problem={problem} what="map" /> : (
+      <div class="page">
+        <section class="summary" aria-label="Summary">
+          <a class="card" href="#simulator">
+            <p class="label muted">Forecast</p>
+            <p class="big">{sim!.headline}</p>
+            <p class="body-sm muted">With the tracked projects: <span class="data">{pct(sim!.with)}</span> by 2050, up from <span class="data">{pct(sim!.without)}</span> without them. Illustrative model.</p>
+          </a>
+          <a class="card" href={url(`${base}/map/`)}>
+            <p class="label muted">Tree map</p>
+            <p class="big">{subs.length} sub-goals · {stepCount} steps · {data.projects.length} projects</p>
+            <p class="body-sm muted">{blockers.length ? <>Main blockers: {blockers.map((id) => data.nodes[id].title).join('; ')}.</> : 'No main blocker marked.'}</p>
+          </a>
+          <a class="card" href={url(`${base}/network/`)}>
+            <p class="label muted">Who's working on it</p>
+            <p class="big">{orgs.toLocaleString('en')} organisations</p>
+            <p class="body-sm muted">{byGroup.length ? byGroup.map(([g, n]) => `${n.toLocaleString('en')} ${GROUP_LABEL[g].toLowerCase()}`).join(' · ') : `${data.actors.length} in the curated network`}{rel ? ` · ${rel.edges.length} relationships mapped` : ''}.</p>
+          </a>
+          <a class="card" href={url(`${base}/field/`)}>
+            <p class="label muted">State of the field</p>
+            <p class="big">{field ? `${field.summary.totals.kept.toLocaleString('en')} items` : 'Not scanned yet'}</p>
+            <p class="body-sm muted">{field ? <>Papers, code, startups, investors and news from {Object.keys(field.summary.sources).length} open sources{growth !== null ? <>; research output {growth >= 0 ? 'up' : 'down'} <span class="data">{Math.abs(growth)}%</span> since {trend![0][0]}</> : ''}.</> : 'Run the field scanner to fill this in.'}</p>
+          </a>
         </section>
 
-        <div class="actions">
-          <a class="btn btn-primary" href={newReportUrl(problem)}><Icon name="plus" />Publish a report on GitHub</a>
-          <a class="btn btn-secondary" href={gh.tree(folder)}><Icon name="github" />Reports folder</a>
-          <a class="btn btn-ghost" href={issueUrl}>Suggest a topic or source</a>
-        </div>
+        <LeadingProjects data={data} problem={problem} />
 
-        {data && (
-          <div class="two">
-            <a class="panel sum" href={url(`/problems/${problem.slug}/map/`)}>
-              <p class="label muted">Tree map</p>
-              <p class="subheading">{subs.length} sub-goals, {stepCount} steps, {data.projects.length} projects</p>
-              <p class="body-sm muted">Sub-goals: {subs.filter((id) => data.nodes[id].status === 'open').length} open · {subs.filter((id) => data.nodes[id].status === 'in_progress').length} in progress · {subs.filter((id) => ['demonstrated', 'solved'].includes(data.nodes[id].status)).length} demonstrated or solved. Steps and most projects come from the scanners.</p>
-              {blockers.length > 0 && (
-                <div><p class="label muted">Main blockers</p><ul class="plain body-sm">{blockers.map((id) => <li>{data.nodes[id].title}</li>)}</ul></div>
-              )}
-              <span class="go body-sm">Open the tree map <Icon name="arrow" size={12} /></span>
-            </a>
-            <a class="panel sum" href={url(`/problems/${problem.slug}/network/`)}>
-              <p class="label muted">Who's working on it</p>
-              <p class="subheading">{data.actors.length} organisations</p>
-              <p class="body-sm muted">{KINDS.filter((k) => data.actors.some((a) => a.kind === k)).map((k) => `${data.actors.filter((a) => a.kind === k).length} ${KIND_LABEL[k].toLowerCase()}`).join(' · ')}</p>
-              <div><p class="label muted">Sub-goals with nobody in the curated network</p><p class="body-sm">{uncovered.length ? uncovered.map((id) => data.nodes[id].title).join('; ') : 'None'}</p></div>
-              <span class="go body-sm">Open the network <Icon name="arrow" size={12} /></span>
-            </a>
+        <section id="simulator" class="simsec">
+          <div class="simhead">
+            <h2 class="display-l">Simulator</h2>
+            <p class="body muted">How the tracked projects change the chance of reaching the goal, and what would change it more. Move the controls to try a scenario.</p>
           </div>
-        )}
-
-        <section class="reports">
-          <h2 class="heading">Reports <span class="data muted">{reports.length}</span></h2>
-          {reports.length === 0 && <p class="body muted">Nobody has published a report on this problem yet. You could be first.</p>}
-          {reports.map((r, i) => <ReportCard report={r} latest={i === 0} />)}
+          <Simulator data={data} problem={problem} />
         </section>
       </div>
-
-      <aside class="side">
-        <div class="panel how">
-          <h2 class="subheading">How publishing works</h2>
-          <ol class="body-sm">
-            <li><strong>Write.</strong> "Publish a report" opens GitHub with the report template in <code class="data-sm">{folder}/</code>. Tree map steps and organisations are files too.</li>
-            <li><strong>Propose.</strong> Saving it there opens a pull request. The build check validates the file.</li>
-            <li><strong>Review.</strong> Reviewers comment and approve. Set <code class="data-sm">status: reviewed</code> once an expert has checked it.</li>
-            <li><strong>Publish.</strong> Merging to <code class="data-sm">main</code> rebuilds and deploys the site.</li>
-          </ol>
-        </div>
-        <div class="panel">
-          <h2 class="subheading">Every report covers</h2>
-          <ul class="body-sm muted plain">
-            <li>Where we are now</li><li>What has to be true</li><li>Main bottlenecks</li><li>Paths</li>
-            <li>What would change this assessment</li><li>What you can do</li><li>Gaps</li>
-          </ul>
-        </div>
-      </aside>
-    </div>
+    )}
   </div>
 </BaseLayout>
 <style>
-  .grid { margin-top: var(--space-8); display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: var(--space-6); align-items: start; }
-  @media (max-width: 900px) { .grid, .two { grid-template-columns: 1fr; } }
-  .two { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-6); }
-  .sum { display: grid; gap: var(--space-2); align-content: start; color: var(--ink); text-decoration: none; }
-  .sum:hover { border-color: var(--line-strong); color: var(--ink); }
-  .sum:hover .go { text-decoration: underline; }
-  .go { color: var(--signal); display: inline-flex; align-items: center; gap: var(--space-1); }
-  .main, .side, .reports { display: grid; gap: var(--space-6); }
-  .reports { gap: var(--space-4); margin-top: var(--space-2); }
-  .headline { display: grid; gap: var(--space-1); }
-  .from { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin-top: var(--space-2); }
-  .actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
-  .how ol { margin: var(--space-3) 0 0; padding-left: var(--space-4); display: grid; gap: var(--space-2); }
-  .plain { list-style: none; margin: var(--space-3) 0 0; padding: 0; display: grid; gap: var(--space-1); }
-  code { background: var(--surface-2); padding: 0 var(--space-1); border-radius: var(--radius-sm); }
+  .page { display: grid; gap: var(--space-16); margin-top: var(--space-8); }
+  .page > * { min-width: 0; }
+  .summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-4); }
+  @media (max-width: 1000px) { .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 560px) { .summary { grid-template-columns: minmax(0, 1fr); } }
+  .card { min-width: 0; overflow-wrap: anywhere; display: grid; gap: var(--space-2); align-content: start; background: var(--surface-1); border: var(--stroke-hairline) solid var(--line); border-radius: var(--radius-md); padding: var(--space-4); color: var(--ink); text-decoration: none; }
+  .card:hover { border-color: var(--line-strong); color: var(--ink); }
+  .big { font-family: var(--font-sans); font-size: 18px; line-height: 24px; font-weight: 600; }
+  .simsec { display: grid; gap: var(--space-6); }
+  .simhead { display: grid; gap: var(--space-2); max-width: 70ch; }
 </style>
