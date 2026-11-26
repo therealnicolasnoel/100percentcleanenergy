@@ -1,6 +1,6 @@
 # Keystone reports
 
-An Astro site that publishes reports on the 100 problems, plus a **tree map** that breaks each problem into the steps it needs, a **network map** of who is building, researching, investing, funding and regulating each step, and a **state of the field** page filled by an automated scanner (papers, repositories, startups, companies, investors, incubators, grants, investor memos and news, mapped to the steps). Everything is a file in this repo, so GitHub is where people write, review and publish it, and every change is a commit.
+An Astro site that publishes reports on the 100 problems, plus a **tree map** that breaks each problem into the steps it needs, a **who's working on it** page (a Sankey breakdown of every organisation by type and by step, and a network map of who funds, invests in, co-authors with or accelerates whom), and a **state of the field** page filled by an automated scanner (papers, repositories, startups, companies, investors, incubators, grants, investor memos and news, mapped to the steps). Everything is a file in this repo, so GitHub is where people write, review and publish it, and every change is a commit.
 
 It starts with one problem open: **11. Generate 100% of the world's electricity from clean sources**. Every problem uses the same layouts.
 
@@ -43,7 +43,8 @@ problems/11-clean-electricity/
   map/nodes/<id>.json        one file per step of the tree map
   network/<id>.json          one file per organisation
   scan.json                  what the field scanner searches for, per step
-  field/                     scanner output (generated; reviewed through pull requests)
+  field/                     scanner output (generated; reviewed through pull requests):
+                             records, organisations, summary, relations (the relationship scan)
   reports/<date>-<name>.md   reports
 templates/                   starting files for a report, a step and an organisation
 src/
@@ -125,6 +126,30 @@ Responses are cached for six days in `scanner/.cache/`, so re-runs are quick and
 **Claude review (optional).** With `--llm`, Claude (`claude-opus-5-5`, low effort, structured output) reads each kept item's title and summary, drops the ones that only share words with a step, and re-assigns steps. Decisions are cached, so later runs only pay for new items, and the run stops at the cost cap.
 
 **Every week**, `.github/workflows/scan.yml` re-runs the scan and opens a pull request with the changes, so new findings are reviewed before they're published. Enable "Allow GitHub Actions to create and approve pull requests" in Settings → Actions → General once. Pull requests opened by the workflow don't trigger other workflows, so its own build step is the check.
+
+## Who's working on it
+
+The page has two views, toggled at the top (`?view=network` links straight to the second):
+
+- **Breakdown**: a Sankey in the style of an income-statement flow chart. Organisation types (startups, companies, research groups, funders…) flow into four groups (building, research, capital and support, policy and other), into one total, then split across the tree's sub-goals and steps. Every organisation counts once, split across the steps it appears on. Hover a node to trace its flows; "View as table" lists the numbers.
+- **Network map**: organisations and the relationships between them, with the tree's steps on a ring. Organisations sit near the steps they work on and the organisations they're linked to. Select one to see each relationship and its evidence (the paper, grant or Wikidata entry it came from). Filter by group or relationship type.
+
+Below both, the curated network (the files in `network/`) stays the reviewed source of truth.
+
+### Relationship scanner
+
+`scanner/network.mjs` runs after every field scan, or on its own with `npm run scan:network -- <slug>`. It writes `field/relations.json` from:
+
+| Relationship | Where it comes from |
+|---|---|
+| funds | Funders and sponsors named on papers, DOE reports and NSF grants → the institutions that did the work; Wikidata "funder" (P8324) |
+| invests in | Wikidata "investor" (P1951) on companies found, including investors not otherwise in the scan; curated `links` |
+| co-authors with | Institutions on two or more of the same papers |
+| accelerated | Y Combinator → its startups |
+| parent of | Wikidata "parent organisation" (P749), "owned by" (P127), "subsidiary" (P355) |
+| partners with | Wikidata "partnership with" (P2652) |
+
+Organisations are resolved on Wikidata by Wikidata id, ROR id (P6782) or exact name, including every curated organisation. The map keeps every curated organisation plus the best-connected others, with a fair share per type (up to 140 in total).
 
 ## Report frontmatter
 

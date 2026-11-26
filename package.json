@@ -9,7 +9,8 @@
     "preview": "astro preview",
     "check": "astro check",
     "scan": "node scanner/cli.mjs",
-    "scan:init": "node scanner/cli.mjs --init"
+    "scan:init": "node scanner/cli.mjs --init",
+    "scan:network": "node scanner/cli.mjs --network-only"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.14.0",

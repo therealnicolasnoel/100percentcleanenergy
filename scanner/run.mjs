@@ -104,7 +104,7 @@ export async function runScan(dir, { only = SOURCE_IDS, llm = false, offline = f
   mkdirSync(out, { recursive: true });
   const generated_at = new Date().toISOString();
   writeFileSync(join(out, 'records.json'), JSON.stringify({ generated_at, records }, null, 0) + '\n');
-  writeFileSync(join(out, 'organisations.json'), JSON.stringify({ generated_at, organisations: orgs.slice(0, 600) }, null, 0) + '\n');
+  writeFileSync(join(out, 'organisations.json'), JSON.stringify({ generated_at, organisations: orgs }, null, 0) + '\n');
   writeFileSync(join(out, 'summary.json'), JSON.stringify({
     generated_at,
     since,

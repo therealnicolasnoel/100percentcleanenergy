@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import ProblemHeader from '../../../components/ProblemHeader.astro';
-import NetworkMap from '../../../components/NetworkMap.astro';
+import WhoView from '../../../components/WhoView.astro';
 import NoData from '../../../components/NoData.astro';
 import { activeProblems } from '../../../data/problems';
 import { getProblemData } from '../../../lib/problemData';
@@ -17,7 +17,7 @@ const reports = await getReportsFor(problem);
 <BaseLayout title={`Who's working on it · ${problem.number}. ${problem.title}`}>
   <div class="wide">
     <ProblemHeader problem={problem} current="network" size="l" counts={{ reports: reports.length, steps: data?.order.length, organisations: data?.actors.length }} />
-    {data ? <NetworkMap data={data} problem={problem} /> : <NoData problem={problem} what="network" />}
+    {data ? <WhoView data={data} problem={problem} /> : <NoData problem={problem} what="network" />}
   </div>
 </BaseLayout>
 <style>

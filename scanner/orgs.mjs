@@ -10,7 +10,7 @@ function orgKey(name) {
 
 const TYPE_PRIORITY = ['startup', 'incubator', 'investor', 'funder', 'company', 'builder', 'policy', 'research', 'nonprofit', 'other'];
 
-export function buildOrgs(records, network) {
+export function buildOrgs(records, network, { index = null } = {}) {
   // Union-find over every identifier an organisation is seen with (Wikidata, ROR,
   // GitHub, YC, name), so "seen by name in OSTI" and "seen by ROR id in OpenAlex"
   // end up as one organisation whatever order the records come in.
@@ -32,6 +32,7 @@ export function buildOrgs(records, network) {
   const byKey = new Map();
   for (const { r, o, keys } of mentions) {
     const key = find(keys[0]);
+    if (index) index.set(`${r.id}|${o.name}`, key);
     const e = byKey.get(key) ?? { key, names: {}, types: {}, roles: {}, ids: {}, countries: {}, urls: new Set(), records: new Set(), steps: {}, kinds: {}, profile: null };
     e.names[o.name] = (e.names[o.name] ?? 0) + 1;
     e.types[o.type] = (e.types[o.type] ?? 0) + (o.role === 'self' ? 10 : 1);
@@ -58,7 +59,9 @@ export function buildOrgs(records, network) {
   };
   return [...byKey.values()]
     .map((e) => {
-      const name = top(e.names);
+      // Prefer a plain variant: "Form Energy" over "Form Energy (United States)".
+      const plain = Object.keys(e.names).filter((n) => !/\(.*\)\s*$/.test(n)).sort((a, b) => e.names[b] - e.names[a])[0];
+      const name = plain ?? top(e.names).replace(/\s*\([^)]*\)\s*$/, '');
       const type = Object.keys(e.types).sort((a, b) => e.types[b] - e.types[a] || TYPE_PRIORITY.indexOf(a) - TYPE_PRIORITY.indexOf(b))[0];
       const url = [...e.urls][0] ?? null;
       return {
