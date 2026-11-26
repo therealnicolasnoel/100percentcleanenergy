@@ -9,6 +9,7 @@ import Icon from '../components/Icon.astro';
 import ProblemHeader from '../components/ProblemHeader.astro';
 import LeadingProjects from '../components/LeadingProjects.astro';
 import Simulator from '../components/Simulator.astro';
+import ForecastGraph from '../components/ForecastGraph.astro';
 import NoData from '../components/NoData.astro';
 import type { Problem } from '../data/problems';
 import type { ProblemData } from '../lib/problemData';
@@ -71,10 +72,15 @@ const pct = (x: number) => `${Math.round(x * 100)}%`;
 
         <section id="simulator" class="simsec">
           <div class="simhead">
-            <h2 class="display-l">Simulator</h2>
-            <p class="body muted">How the tracked projects change the chance of reaching the goal, and what would change it more. Move the controls to try a scenario.</p>
+            <h2 class="display-l">Forecast</h2>
+            <p class="body muted">The different ways from today to the goal, simulated thousands of times: which projects to keep going, where new ones should start, and what each path is likely to reach.</p>
           </div>
-          <Simulator data={data} problem={problem} />
+          <ForecastGraph data={data} problem={problem} />
+          <details class="own">
+            <summary class="subheading">Build your own scenario</summary>
+            <p class="body-sm muted">Set the target year, how often projects succeed, and how many new projects each sub-goal gets, and see the forecast change.</p>
+            <Simulator data={data} problem={problem} />
+          </details>
         </section>
       </div>
     )}
@@ -91,4 +97,7 @@ const pct = (x: number) => `${Math.round(x * 100)}%`;
   .big { font-family: var(--font-sans); font-size: 18px; line-height: 24px; font-weight: 600; }
   .simsec { display: grid; gap: var(--space-6); }
   .simhead { display: grid; gap: var(--space-2); max-width: 70ch; }
+  .own { display: grid; gap: var(--space-4); border-top: var(--stroke-hairline) solid var(--line); padding-top: var(--space-6); }
+  .own > summary { cursor: pointer; }
+  .own[open] > summary { margin-bottom: var(--space-4); }
 </style>

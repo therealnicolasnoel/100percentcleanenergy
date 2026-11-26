@@ -115,6 +115,20 @@ The estimates and elasticities are assumptions in the sub-goal files, so they ge
 
 Reports (`problems/<slug>/reports/`) still build at their URLs, but the overview no longer lists them: projects are the unit of action now.
 
+### Forecast branches
+
+Above the custom scenario sits a git-style forecast (`src/lib/forecast.ts`, computed at build time). Each branch is one way from today to the goal:
+
+| Branch | What it is |
+|---|---|
+| `main` | The tracked projects as they are. Its commits are the tracked projects that matter most, found by switching each one off |
+| `best-path` | 12 new projects, placed two at a time on whichever step raises the chance by 2050 most (a greedy search over every step) |
+| `focus/<sub-goal>` | The same 12 new projects, all on one sub-goal |
+| `balanced` | The same 12, spread evenly |
+| `risk/stall` | No new projects, and the tracked ones deliver half as often |
+
+Commits are the projects to start (with "Create a project here", prefilled with the sub-goal and step), the year each sub-goal is done in half of the simulated futures (the last one is the bottleneck), and when the goal is. Every branch uses the same simulated futures, so differences come from the strategy alone. "Start projects here first" lists best-path's steps.
+
 ## Field scanner
 
 `scanner/` pulls what is happening around each step of a problem's tree from free, official APIs (no page scraping), maps it to the steps, and writes `problems/<slug>/field/{records,organisations,summary,steps,projects,relations}.json`. The site's "State of the field" tab, the tree map's inspector and the "Add to network" links read those files.

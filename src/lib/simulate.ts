@@ -39,7 +39,21 @@ export interface SimProject { key: string; weight: number; success: number }
 export interface SimUnit { id: string; projects: SimProject[] }
 export interface SimSub { id: string; title: string; logic: 'AND' | 'OR'; p10: number; p90: number; pSuccess: number; elasticity: number; units: SimUnit[]; tracked: number }
 export interface SimModel { start: number; subs: SimSub[]; estimated: boolean }
-export interface Scenario { includeTracked: boolean; successScale: number; extra: Record<string, number>; runs: number; seed: number }
+export interface Scenario {
+  includeTracked: boolean;
+  /** Scales every project's chance of success (pessimistic / central / optimistic). */
+  successScale: number;
+  /** Extra hypothetical active projects per sub-goal, spread across its steps. */
+  extra: Record<string, number>;
+  /** Extra hypothetical active projects on one step (unit id). */
+  extraUnits?: Record<string, number>;
+  /** Scales only the tracked projects' chance of success (for "if they stall"). */
+  trackedScale?: number;
+  /** Tracked projects (by key) left out of this scenario. */
+  exclude?: string[];
+  runs: number;
+  seed: number;
+}
 export interface SimResult {
   start: number;
   runs: number;
@@ -121,6 +135,8 @@ export function simulate(model: SimModel, sc: Scenario): SimResult {
   // Common random numbers: baseline draws come from one stream and each step's project
   // draws from its own, so scenarios differ only by what the scenario changes.
   const rand = rng(sc.seed);
+  const excluded = new Set(sc.exclude ?? []);
+  const trackedScale = sc.trackedScale ?? 1;
   const normal = () => { const u = 1 - rand(), v = rand(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
   const goalT = new Float64Array(sc.runs);
   const subT = model.subs.map(() => new Float64Array(sc.runs));
@@ -139,13 +155,15 @@ export function simulate(model: SimModel, sc: Scenario): SimResult {
         // The sub-goal's own draw carries its P10–P90 range; steps vary a little around
         // it, centred so that the slowest (AND) or fastest (OR) step still matches it.
         const z = normal();
-        const extraPerUnit = (sc.extra[s.id] ?? 0) / s.units.length;
+        const perUnit = (sc.extra[s.id] ?? 0) / s.units.length;
         const shift = (s.logic === 'OR' ? 1 : -1) * UNIT_SIGMA * expectedMax(s.units.length);
         const times = s.units.map((u, ui) => {
           const base = Math.exp(params[i].mu + params[i].sigma * z + UNIT_SIGMA * normal() + shift);
           const pr = rng(sc.seed * 7919 + r * 104729 + i * 1009 + ui * 31);
           let effort = 0;
-          for (const p of u.projects) { const x = pr(); if (sc.includeTracked && x < Math.min(1, p.success * sc.successScale)) effort += p.weight; }
+          // Every project consumes its draw even when left out, so scenarios stay comparable.
+          for (const p of u.projects) { const x = pr(); if (sc.includeTracked && !excluded.has(p.key) && x < Math.min(1, p.success * sc.successScale * trackedScale)) effort += p.weight; }
+          const extraPerUnit = perUnit + (sc.extraUnits?.[u.id] ?? 0);
           // Hypothetical extra projects: solid, active, average-sized.
           const extra = rng(sc.seed * 15485863 + r * 7907 + i * 101 + ui);
           for (let k = 0; k < Math.floor(extraPerUnit); k++) if (extra() < Math.min(1, 0.45 * sc.successScale)) effort += 1.5;
