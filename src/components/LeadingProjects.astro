@@ -47,57 +47,70 @@ const meta = (p: Project) => {
 const tmpl = JSON.parse(readFileSync(join(process.cwd(), 'templates', 'project.json'), 'utf8'));
 const createUrl = gh.newFile(`problems/${problem.slug}/projects/your_project_id.json`, JSON.stringify({ ...tmpl, subgoal: subgoals[0] }, null, 2) + '\n');
 ---
-<section class="lp" data-lp>
+<section class="lp" data-lp data-limit={limit}>
   <div class="lp-head">
     <div>
-      <h2 class="display-l">Leading projects</h2>
-      <p class="body muted">{ongoing.length} ongoing projects across the tree, ranked by how much they're likely to deliver and how much their sub-goal moves the forecast. Join one, back one, or start your own.</p>
+      <h2 class="heading">Leading projects</h2>
+      <p class="body-sm muted">{ongoing.length} ongoing projects, strongest first. Join one, back one, or start your own.</p>
     </div>
-    <div class="cta">
-      <a class="btn btn-primary" href={createUrl}><Icon name="plus" />Create a project</a>
-      <a class="btn btn-secondary" href={url(`/problems/${problem.slug}/map/`)}>All projects in the tree</a>
-    </div>
+    <a class="btn btn-primary" href={createUrl}><Icon name="plus" />Create a project</a>
   </div>
-  <div class="chips" role="group" aria-label="Sub-goal">
+  <div class="chips" role="group" aria-label="Filter by sub-goal">
     <button type="button" class="chip on" data-sub="">All</button>
     {subgoals.map((s) => <button type="button" class="chip" data-sub={s}>{data.nodes[s].title} <span class="data-sm">{ongoing.filter((p) => p.subgoal === s).length}</span></button>)}
   </div>
   <ol class="cards">
     {[...top, ...rest].map((p, i) => (
-      <li class:list={['pc', p.kind]} data-sub={p.subgoal} data-first={i < top.length ? '1' : undefined} hidden={i >= top.length}>
-        <p class="k label"><span class="tag">{KIND[p.kind]}</span><span class="muted">{p.source}</span></p>
+      <li class:list={['pc', p.kind]} data-sub={p.subgoal} data-rank={i} hidden={i >= limit}>
+        <p class="k label"><span class="tag">{KIND[p.kind]}</span>{meta(p) && <span class="data-sm muted">{meta(p)}</span>}</p>
         <h3 class="subheading">{p.url ? <a href={p.url} target="_blank" rel="noopener">{p.title}</a> : p.title}</h3>
         {p.description && <p class="body-sm desc">{p.description}</p>}
-        <p class="data-sm muted">{meta(p)}</p>
         {p.looking_for && p.looking_for.length > 0 && <p class="body-sm"><strong>Looking for:</strong> {p.looking_for.join(', ')}</p>}
-        <p class="serves body-sm">
-          <a href={url(`/problems/${problem.slug}/map/#${p.subgoal}`)}>{data.nodes[p.subgoal].title}</a>
-          {p.step && <> → <a href={url(`/problems/${problem.slug}/map/#${p.step}`)}>{data.nodes[p.step].title}</a></>}
-        </p>
-        <p class="act body-sm">
-          {p.url && <a href={p.url} target="_blank" rel="noopener">{p.kind === 'open_source' ? 'Contribute' : p.kind === 'startup' ? 'Visit' : 'Open'} <Icon name="arrow" size={12} /></a>}
-          <a href={url(`/problems/${problem.slug}/map/#p:${p.key}`)}>Details</a>
-        </p>
+        <p class="serves body-sm"><a href={url(`/problems/${problem.slug}/map/#${p.step ?? p.subgoal}`)}>{data.nodes[p.step ?? p.subgoal].title}</a></p>
+        {p.url && <p class="act body-sm"><a href={p.url} target="_blank" rel="noopener">{p.kind === 'open_source' ? 'Contribute' : p.kind === 'startup' ? 'Visit' : 'Open'} <Icon name="arrow" size={12} /></a></p>}
       </li>
     ))}
   </ol>
-  <p class="body-sm muted">Ranking: expected contribution (project size × chance of success, as in the simulator below) × how much five more projects on its sub-goal would raise the chance of reaching the goal by {target}. People's own projects come first. Ongoing means code pushed in the last 18 months, an operating startup, a grant from the last four years, or an active or proposed community project.</p>
+  <div class="foot">
+    <button type="button" class="btn btn-secondary" data-all>Show all {ongoing.length}</button>
+    <details class="how body-sm muted">
+      <summary>How projects are ranked</summary>
+      <p>By how much each is likely to deliver (size × chance of success, as in the forecast) and how much its sub-goal moves the forecast by {target}. People's own projects come first. Ongoing: code pushed in the last 18 months, an operating startup, a grant from the last four years, or an active community project. The first view gives no sub-goal more than a third of the places.</p>
+    </details>
+  </div>
 </section>
 
 <script>
   for (const root of document.querySelectorAll<HTMLElement>('[data-lp]')) {
-    root.addEventListener('click', (ev) => {
-      const b = (ev.target as Element).closest<HTMLElement>('button[data-sub]');
-      if (!b) return;
-      const sub = b.dataset.sub!;
-      root.querySelectorAll('button[data-sub]').forEach((x) => x.classList.toggle('on', x === b));
+    const limit = Number(root.dataset.limit || 6);
+    let sub = '';
+    let all = false;
+    const items = [...root.querySelectorAll<HTMLElement>('li[data-sub]')];
+    const allBtn = root.querySelector<HTMLButtonElement>('[data-all]')!;
+    const render = () => {
       let n = 0;
-      root.querySelectorAll<HTMLElement>('li[data-sub]').forEach((li) => {
-        const show = sub ? li.dataset.sub === sub && n < 12 : !!li.dataset.first;
+      // Unfiltered and collapsed: the balanced first view (the first `limit` in rank order).
+      for (const li of items) {
+        const match = !sub || li.dataset.sub === sub;
+        const show = match && (all || (sub ? n < limit : Number(li.dataset.rank) < limit));
         if (show) n++;
         li.hidden = !show;
-      });
+      }
+      const total = items.filter((li) => !sub || li.dataset.sub === sub).length;
+      allBtn.hidden = total <= limit;
+      allBtn.textContent = all ? 'Show fewer' : `Show all ${total}`;
+    };
+    root.addEventListener('click', (ev) => {
+      const b = (ev.target as Element).closest<HTMLElement>('button[data-sub]');
+      if (b) {
+        sub = b.dataset.sub!;
+        all = false;
+        root.querySelectorAll('button[data-sub]').forEach((x) => x.classList.toggle('on', x === b));
+        render();
+      }
     });
+    allBtn.addEventListener('click', () => { all = !all; render(); });
+    render();
   }
 </script>
 
@@ -105,7 +118,9 @@ const createUrl = gh.newFile(`problems/${problem.slug}/projects/your_project_id.
   .lp { display: grid; gap: var(--space-4); }
   .lp-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-4); align-items: end; }
   .lp-head > div:first-child { display: grid; gap: var(--space-2); max-width: 70ch; }
-  .cta { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+  .foot { display: grid; gap: var(--space-3); justify-items: start; }
+  .how summary { cursor: pointer; }
+  .how p { margin-top: var(--space-2); max-width: 80ch; }
   .chips { display: flex; flex-wrap: wrap; gap: var(--space-2); }
   .chip { font: inherit; font-size: 13px; color: var(--ink); background: var(--surface-1); border: var(--stroke-hairline) solid var(--line-strong); border-radius: var(--radius-sm); padding: var(--space-1) var(--space-3); cursor: pointer; }
   .chip.on { background: var(--signal-tint); border-color: var(--signal); }

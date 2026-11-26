@@ -1,6 +1,6 @@
 # Keystone reports
 
-An Astro site for the 100 problems. Each problem gets an **overview** (a summary of every section, the leading ongoing projects, and a Monte Carlo simulator of how those projects change the chance of reaching the goal), a **tree map** (fixed problem → curated sub-goals → steps generated from what the scanners find → projects), a **who's working on it** page (Sankey breakdown and network map), and a **state of the field** page filled by automated scanners. Everything is a file in this repo, so GitHub is where people change it, and every change is a commit.
+An Astro site for the 100 problems. Each problem has three pages: **Act** (where it stands, the next steps, the leading projects and a forecast of different paths), **Plan** (the tree: fixed problem → curated sub-goals → steps generated from what the scanners find → projects) and **What's happening** (who's involved and the latest work, filled by automated scanners). Everything is a file in this repo, so GitHub is where people change it, and every change is a commit.
 
 It starts with one problem open: **11. Generate 100% of the world's electricity from clean sources**. Every problem uses the same layouts.
 
@@ -57,7 +57,7 @@ src/
   styles/tokens.css          copied from ../DESIGN.md
 ```
 
-Each problem has four pages, all from shared layouts: `/problems/<slug>/` (overview: summary, leading projects, simulator), `/problems/<slug>/map/`, `/problems/<slug>/network/` and `/problems/<slug>/field/`.
+Each problem has three pages, all from shared layouts: `/problems/<slug>/` (Act), `/problems/<slug>/map/` (Plan) and `/problems/<slug>/field/` (What's happening). The old `/problems/<slug>/network/` redirects to What's happening.
 
 ## Open another problem
 
@@ -99,25 +99,31 @@ Sub-goal fields: `id` (matches the file name), `title`, `type: "subgoal"`, `desc
 
 The build fails, and so does the pull-request check, if a step or organisation points at an id that doesn't exist, the tree has a loop, or a step can't be reached from the root.
 
-## Overview and simulator
+## Act
 
-The overview leads with four summary cards (forecast, tree map, who's working on it, state of the field). Below them come the **leading projects**: ongoing projects, ranked by expected contribution and by how much their sub-goal moves the forecast, with "Create a project". Last is the **simulator**.
+The front page of a problem, built to make the next action obvious:
 
-The simulator (`src/lib/simulate.ts`) runs 4,000 Monte Carlo futures, at build time and again in the browser whenever a control moves:
+1. **Where it stands**: one sentence with the chance of reaching the goal by 2050 with today's projects, when half of the simulated futures get there, and what holds it back most.
+2. **Next steps**: start a project where it helps most (the forecast's best-path steps, each with a prefilled "Create a project here"), join a leading project, and keep the projects the forecast depends on most going.
+3. **Leading projects**: six ongoing projects first, filterable by sub-goal, with "Show all" and "Create a project".
+4. **Forecast**: the git-style branches below, showing four lines by default (today, best path, the strongest single focus, and what happens if projects stall) and the rest under "Show all strategies".
+
+### Simulation model
+
+`src/lib/simulate.ts` runs the Monte Carlo futures behind the forecast:
 
 - The goal is reached when every sub-goal is done. A sub-goal is done when all its steps are, or any one of them if its `logic` is `OR`.
 - Each sub-goal's time without the tracked projects is drawn from a lognormal fitted to its `estimate` (`p10`, `p90`: years from `start_year` in `keystone.json`; `p_success`: the chance it can be done at all). Steps vary a little around their sub-goal.
 - Each project succeeds or not in a run (open-source by recent activity, startups 30%, funded research 50%, people's projects by status). Successful projects add effort, which shortens their step: time × (1 + effort ÷ 5)^−`elasticity` (per sub-goal, default 0.3).
-- Scenario controls: target year, project success (pessimistic, central or optimistic), "add active projects" per sub-goal, and including or excluding the tracked projects. The page compares each scenario with the same futures without the tracked projects. Separate random streams keep scenarios comparable.
-- Output: chance of reaching the goal by each year (fan chart with 50% and 90% bands of arrival years), the lever ranking (points gained from five more projects on each sub-goal), and how often each sub-goal is the last to finish.
+- Every strategy runs on the same futures (separate random streams), so differences come from the strategy alone.
 
 The estimates and elasticities are assumptions in the sub-goal files, so they get code-owner review like the sub-goals. Problem 11's were drafted by AI and haven't been reviewed.
 
-Reports (`problems/<slug>/reports/`) still build at their URLs, but the overview no longer lists them: projects are the unit of action now.
+Reports (`problems/<slug>/reports/`) still build at their URLs but aren't linked: projects are the unit of action.
 
 ### Forecast branches
 
-Above the custom scenario sits a git-style forecast (`src/lib/forecast.ts`, computed at build time). Each branch is one way from today to the goal:
+The forecast (`src/lib/forecast.ts`, computed at build time) shows each strategy as a branch off `main`, with a friendly name on the page:
 
 | Branch | What it is |
 |---|---|
@@ -127,7 +133,7 @@ Above the custom scenario sits a git-style forecast (`src/lib/forecast.ts`, comp
 | `balanced` | The same 12, spread evenly |
 | `risk/stall` | No new projects, and the tracked ones deliver half as often |
 
-Commits are the projects to start (with "Create a project here", prefilled with the sub-goal and step), the year each sub-goal is done in half of the simulated futures (the last one is the bottleneck), and when the goal is. Every branch uses the same simulated futures, so differences come from the strategy alone. "Start projects here first" lists best-path's steps.
+Commits are the projects to start (with "Create a project here", prefilled with the sub-goal and step), the year each sub-goal is done in half of the simulated futures (the last one is the bottleneck), and when the goal is. Every branch uses the same simulated futures, so differences come from the strategy alone. The Act page's first next step lists best-path's steps.
 
 ## Field scanner
 
@@ -162,14 +168,14 @@ Responses are cached for six days in `scanner/.cache/`, so re-runs are quick and
 
 **Every week**, `.github/workflows/scan.yml` re-runs the scan and opens a pull request with the changes, so new findings are reviewed before they're published. Enable "Allow GitHub Actions to create and approve pull requests" in Settings → Actions → General once. Pull requests opened by the workflow don't trigger other workflows, so its own build step is the check.
 
-## Who's working on it
+## What's happening
 
-The page has two views, toggled at the top (`?view=network` links straight to the second):
+One page for context, top to bottom:
 
-- **Breakdown**: a Sankey in the style of an income-statement flow chart. Organisation types (startups, companies, research groups, funders…) flow into four groups (building, research, capital and support, policy and other), into one total, then split across the tree's sub-goals and steps. Every organisation counts once, split across the steps it appears on. Hover a node to trace its flows; "View as table" lists the numbers.
-- **Network map**: organisations and the relationships between them, with the tree's steps on a ring. Organisations sit near the steps they work on and the organisations they're linked to. Select one to see each relationship and its evidence (the paper, grant or Wikidata entry it came from). Filter by group or relationship type.
-
-Below both, the curated network (the files in `network/`) stays the reviewed source of truth.
+- **Who's involved**: a Sankey in the style of an income-statement flow chart. Organisation types (startups, companies, research groups, funders…) flow into four groups (building, research, capital and support, policy and other), into one total, then split across the sub-goals and steps. Every organisation counts once. Below it, the organisations people have checked (the files in `network/`), grouped by kind, with "Add an organisation".
+- **Activity by step**: items per step and kind, with papers-per-year trends. Select a number to list those items.
+- **Latest work**: everything the field scanner found, newest first, filterable by step, kind and text.
+- **Organisations found**: every organisation the scan mentions, by type, with a prefilled "Add to network".
 
 ### Relationship scanner
 
@@ -184,7 +190,7 @@ Below both, the curated network (the files in `network/`) stays the reviewed sou
 | parent of | Wikidata "parent organisation" (P749), "owned by" (P127), "subsidiary" (P355) |
 | partners with | Wikidata "partnership with" (P2652) |
 
-Organisations are resolved on Wikidata by Wikidata id, ROR id (P6782) or exact name, including every curated organisation. The map keeps every curated organisation plus the best-connected others, with a fair share per type (up to 140 in total).
+Organisations are resolved on Wikidata by Wikidata id, ROR id (P6782) or exact name, including every curated organisation. It keeps every curated organisation plus the best-connected others, with a fair share per type (up to 140 in total). The site no longer draws these relationships (the network map was removed to keep things simple), but the data is still collected in `field/relations.json` for later use.
 
 ## Report frontmatter
 

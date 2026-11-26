@@ -139,6 +139,16 @@ const unsupported = subgoals.filter((id) => !data.nodes[id].sources.length).leng
             )}
             {n.description && <p class="body">{n.description}</p>}
             {n.type === 'goal' && <p class="body-sm muted">The problem statement is fixed. People curate the sub-goals; the scanners generate the steps under them from what researchers, builders and investors are working on; projects come from the scanners and from anyone who adds one.</p>}
+            {parentSub && (
+              <div class="sec">
+                <p class="label muted">Projects <span class="data-sm">{projs.length}</span>{n.type === 'subgoal' && n.children.length > 0 && ' not under a step'}</p>
+                {projs.length
+                  ? <ul class="plain body-sm projs">{projs.slice(0, 10).map((p) => <li><a href={`#p:${p.key}`} data-goto={`p:${p.key}`}>{p.title}</a> <span class="data-sm muted">{PROJECT_KIND[p.kind]}{metricLine(p) && ` · ${metricLine(p)}`}</span></li>)}</ul>
+                  : <p class="body-sm muted">None yet.</p>}
+                {projs.length > 10 && <p class="body-sm muted">and {projs.length - 10} more in the scan.</p>}
+                <a class="btn btn-primary" href={createUrl(parentSub, n.type === 'step' ? id : undefined)}><Icon name="plus" />Create a project here</a>
+              </div>
+            )}
             {n.type === 'step' && n.keywords && n.keywords.length > 0 && (
               <div class="sec"><p class="label muted">Topic keywords</p><div class="row">{n.keywords.slice(0, 10).map((k) => <span class="label tag">{k}</span>)}</div>
                 {n.topic && <p class="body-sm muted">OpenAlex topic in {n.topic.subfield}{n.topic.works_count ? `, ${nf.format(n.topic.works_count)} works worldwide` : ''}. <a href={n.topic.url} target="_blank" rel="noopener">Open in OpenAlex</a></p>}
@@ -157,23 +167,13 @@ const unsupported = subgoals.filter((id) => !data.nodes[id].sources.length).leng
               <div class="sec"><p class="label muted">{n.type === 'goal' ? 'Sub-goals' : 'Steps found by the scanners'}</p>
                 <ul class="plain body-sm">{n.children.map((c) => <li><a href={`#${c}`} data-goto={c}>{data.nodes[c].title}</a>{data.nodes[c].papers ? <span class="data-sm muted"> {data.nodes[c].papers} papers</span> : ''}</li>)}</ul></div>
             )}
-            {parentSub && (
-              <div class="sec">
-                <p class="label muted">Projects <span class="data-sm">{projs.length}</span>{n.type === 'subgoal' && n.children.length > 0 && ' not under a step'}</p>
-                {projs.length
-                  ? <ul class="plain body-sm projs">{projs.slice(0, 10).map((p) => <li><a href={`#p:${p.key}`} data-goto={`p:${p.key}`}>{p.title}</a> <span class="data-sm muted">{PROJECT_KIND[p.kind]}{metricLine(p) && ` · ${metricLine(p)}`}</span></li>)}</ul>
-                  : <p class="body-sm muted">None yet.</p>}
-                {projs.length > 10 && <p class="body-sm muted">and {projs.length - 10} more in the scan.</p>}
-                <a class="btn btn-primary" href={createUrl(parentSub, n.type === 'step' ? id : undefined)}><Icon name="plus" />Create a project here</a>
-              </div>
-            )}
             {a && (
-              <div class="sec"><p class="label muted">State of the field <span class="data-sm">{a.total} items</span></p>
+              <div class="sec"><p class="label muted">What's happening <span class="data-sm">{a.total} items</span></p>
                 <p class="body-sm">{GROUPS.filter((g) => a.counts[g.id]).map((g) => `${a.counts[g.id]} ${g.label.toLowerCase()}`).join(' · ') || 'Nothing found yet.'}</p>
                 <a class="body-sm" href={url(`/problems/${problem.slug}/field/#step=${id}`)}>See everything found here</a></div>
             )}
             <div class="sec"><p class="label muted">Who's working on this</p>
-              {who.length > 0 && <ul class="plain body-sm">{who.map((x) => <li><a href={url(`/problems/${problem.slug}/network/?view=network`)}>{x.name}</a> <span class="muted">· {KIND_LABEL[x.kind]} · curated</span></li>)}</ul>}
+              {who.length > 0 && <ul class="plain body-sm">{who.map((x) => <li>{x.url ? <a href={x.url} target="_blank" rel="noopener">{x.name}</a> : x.name} <span class="muted">· {KIND_LABEL[x.kind]} · checked</span></li>)}</ul>}
               {found.length > 0 && <ul class="plain body-sm">{found.slice(0, 6).map((o) => <li>{o.url ? <a href={o.url} target="_blank" rel="noopener">{o.name}</a> : o.name} <span class="muted data-sm">{o.steps[id]} items</span></li>)}</ul>}
               {!who.length && !found.length && <p class="body-sm muted">Nobody found yet.</p>}
             </div>
@@ -181,24 +181,11 @@ const unsupported = subgoals.filter((id) => !data.nodes[id].sources.length).leng
               <div class="sec"><p class="label muted">Shared with</p>
                 <ul class="plain body-sm">{shared.map((p) => <li><span class="data-sm">{p.number}</span> {p.active ? <a href={url(`/problems/${p.slug}/map/`)}>{p.title}</a> : p.title}</li>)}</ul></div>
             )}
-            <div class="sec gh">
-              <p class="label muted">On GitHub</p>
-              {n.type === 'goal' && <>
-                <a class="btn btn-secondary" href={gh.edit(n.file!)}><Icon name="pencil" />Propose an edit to the description</a>
-                <p class="body-sm muted">The title is fixed; the build rejects changes to it.</p>
-              </>}
-              {n.type === 'subgoal' && <>
-                <a class="btn btn-secondary" href={gh.edit(n.file!)}><Icon name="pencil" />Propose an edit</a>
-                <p class="body-sm muted">Sub-goals need a maintainer's review before they change.</p>
-                <a class="btn btn-ghost" href={gh.issues(`Challenge sub-goal: ${n.title}`, `Problem ${problem.number}, sub-goal \`${n.id}\` (${n.file})\n\nWhat is wrong or missing, and what is the evidence?\n`)}><Icon name="flag" />Challenge this</a>
-                <a class="btn btn-ghost" href={gh.history(n.file!)}><Icon name="history" />History</a>
-                <a class="btn btn-ghost" href={gh.edit(`problems/${problem.slug}/scan.json`)}>Tune the searches for its steps</a>
-              </>}
-              {n.type === 'step' && <>
-                <a class="btn btn-ghost" href={gh.edit(`problems/${problem.slug}/scan.json`)}><Icon name="pencil" />Rename or hide this step</a>
-                <p class="body-sm muted">Steps are regenerated by every scan. Rename or exclude topic {n.topic?.id} under "steps" in scan.json.</p>
-              </>}
-            </div>
+            <p class="links body-sm muted">
+              {n.type === 'goal' && <>The title is fixed. <a href={gh.edit(n.file!)}>Suggest a better description</a></>}
+              {n.type === 'subgoal' && <>Curated; changes need a maintainer's review. <a href={gh.edit(n.file!)}>Suggest a change</a> · <a href={gh.issues(`Challenge sub-goal: ${n.title}`, `Problem ${problem.number}, sub-goal \`${n.id}\` (${n.file})\n\nWhat is wrong or missing, and what is the evidence?\n`)}>Challenge it</a> · <a href={gh.history(n.file!)}>History</a></>}
+              {n.type === 'step' && <>Generated by the scanners from research topics. <a href={gh.edit(`problems/${problem.slug}/scan.json`)}>Rename or hide it</a></>}
+            </p>
           </section>
         );
       })}
@@ -349,8 +336,7 @@ const unsupported = subgoals.filter((id) => !data.nodes[id].sources.length).leng
   .unsupported { display: inline-flex; align-items: center; gap: var(--space-1); color: var(--caution); background: var(--caution-tint); border-radius: var(--radius-pill); padding: var(--space-1) var(--space-3); }
   .plain { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-1); }
   .projs li { line-height: 18px; }
-  .gh { width: 100%; }
-  .gh .btn { width: 100%; }
+  .links { border-top: var(--stroke-hairline) solid var(--line); padding-top: var(--space-3); }
   .outline summary { cursor: pointer; }
   .outline ul { margin: var(--space-2) 0 0; padding-left: var(--space-6); }
   .outline li { margin: var(--space-1) 0; }

@@ -1,103 +1,128 @@
 ---
 /**
- * The universal problem overview: a quick summary of every section, the leading
- * ongoing projects (the main place to act), and the scenario simulator that shows
- * how those projects change the chance of reaching the goal.
+ * Act: the problem's front page. Where it stands in one sentence, three next steps,
+ * the leading projects, and the forecast of where different paths lead.
  */
 import BaseLayout from './BaseLayout.astro';
 import Icon from '../components/Icon.astro';
 import ProblemHeader from '../components/ProblemHeader.astro';
 import LeadingProjects from '../components/LeadingProjects.astro';
-import Simulator from '../components/Simulator.astro';
 import ForecastGraph from '../components/ForecastGraph.astro';
 import NoData from '../components/NoData.astro';
 import type { Problem } from '../data/problems';
-import type { ProblemData } from '../lib/problemData';
+import type { ProblemData, Project } from '../lib/problemData';
 import { getField } from '../lib/field';
-import { getRelations, GROUP_OF, GROUP_LABEL, GROUP_ORDER } from '../lib/relations';
-import { buildModel, simulate, headline, pBy, DEFAULT_SCENARIO } from '../lib/simulate';
-import { url } from '../site.config';
+import { buildModel, isOngoing, projectWeight, projectSuccess } from '../lib/simulate';
+import { buildForecast } from '../lib/forecast';
+import { gh, url } from '../site.config';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 interface Props { problem: Problem; data: ProblemData | null }
 const { problem, data } = Astro.props;
 const field = getField(problem.slug);
-const rel = getRelations(problem.slug);
-const base = `/problems/${problem.slug}`;
-
-const subs = data ? data.nodes[data.root].children : [];
-const stepCount = data ? data.order.filter((id) => data.nodes[id].type === 'step').length : 0;
-const blockers = data ? subs.filter((id) => data.nodes[id].blocker) : [];
-const sim = data ? (() => {
-  const m = buildModel(data);
-  const withP = simulate(m, DEFAULT_SCENARIO);
-  const without = simulate(m, { ...DEFAULT_SCENARIO, includeTracked: false });
-  return { headline: headline(withP), with: pBy(withP, 2050), without: pBy(without, 2050) };
-})() : null;
-const orgs = field ? field.summary.totals.organisations : data?.actors.length ?? 0;
-const byGroup = field ? GROUP_ORDER.map((g) => [g, field.orgs.filter((o) => (GROUP_OF[o.type] ?? 'policy') === g).length] as const) : [];
-const trend = field?.summary.trends[data?.root ?? ''];
-const growth = trend && trend.length > 1 && trend[0][1] ? Math.round(((trend[trend.length - 1][1] - trend[0][1]) / trend[0][1]) * 100) : null;
+const F = data ? buildForecast(buildModel(data), data) : null;
+const main = F?.branches.find((b) => b.kind === 'main');
+const best = F?.branches.find((b) => b.kind === 'best');
+const t = (id: string) => data?.nodes[id]?.title ?? id;
 const pct = (x: number) => `${Math.round(x * 100)}%`;
----
-<BaseLayout title={`${problem.number}. ${problem.title}`} description={`Projects, forecast and state of the field for: ${problem.title}`}>
-  <div class="wrap">
-    <ProblemHeader problem={problem} current="overview" counts={{ steps: data?.order.length, organisations: data?.actors.length }} />
+const yr = (y: number) => (Number.isFinite(y) && F && y < F.start + 75 ? String(Math.round(y)) : 'not within 75 years');
 
-    {!data ? <NoData problem={problem} what="map" /> : (
+const tmpl = JSON.parse(readFileSync(join(process.cwd(), 'templates', 'project.json'), 'utf8'));
+const createUrl = (subgoal: string, step?: string) =>
+  gh.newFile(`problems/${problem.slug}/projects/your_project_id.json`, JSON.stringify({ ...tmpl, subgoal, step: step ?? '' }, null, 2) + '\n');
+
+const starts = best ? [...best.starts].sort((a, b) => b.count - a.count).slice(0, 3) : [];
+const join3: Project[] = data ? data.projects.filter((p) => isOngoing(p) && p.url).sort((a, b) => projectWeight(b) * projectSuccess(b) - projectWeight(a) * projectSuccess(a)).slice(0, 3) : [];
+const keep = F?.critical.slice(0, 3) ?? [];
+const projByKey = new Map((data?.projects ?? []).map((p) => [p.key, p]));
+---
+<BaseLayout title={`${problem.number}. ${problem.title}`} description={`What to do next on: ${problem.title}`}>
+  <div class="wrap">
+    <ProblemHeader problem={problem} current="act" />
+
+    {!data || !F || !main || !best ? <NoData problem={problem} what="map" /> : (
       <div class="page">
-        <section class="summary" aria-label="Summary">
-          <a class="card" href="#simulator">
-            <p class="label muted">Forecast</p>
-            <p class="big">{sim!.headline}</p>
-            <p class="body-sm muted">With the tracked projects: <span class="data">{pct(sim!.with)}</span> by 2050, up from <span class="data">{pct(sim!.without)}</span> without them. Illustrative model.</p>
-          </a>
-          <a class="card" href={url(`${base}/map/`)}>
-            <p class="label muted">Tree map</p>
-            <p class="big">{subs.length} sub-goals · {stepCount} steps · {data.projects.length} projects</p>
-            <p class="body-sm muted">{blockers.length ? <>Main blockers: {blockers.map((id) => data.nodes[id].title).join('; ')}.</> : 'No main blocker marked.'}</p>
-          </a>
-          <a class="card" href={url(`${base}/network/`)}>
-            <p class="label muted">Who's working on it</p>
-            <p class="big">{orgs.toLocaleString('en')} organisations</p>
-            <p class="body-sm muted">{byGroup.length ? byGroup.map(([g, n]) => `${n.toLocaleString('en')} ${GROUP_LABEL[g].toLowerCase()}`).join(' · ') : `${data.actors.length} in the curated network`}{rel ? ` · ${rel.edges.length} relationships mapped` : ''}.</p>
-          </a>
-          <a class="card" href={url(`${base}/field/`)}>
-            <p class="label muted">State of the field</p>
-            <p class="big">{field ? `${field.summary.totals.kept.toLocaleString('en')} items` : 'Not scanned yet'}</p>
-            <p class="body-sm muted">{field ? <>Papers, code, startups, investors and news from {Object.keys(field.summary.sources).length} open sources{growth !== null ? <>; research output {growth >= 0 ? 'up' : 'down'} <span class="data">{Math.abs(growth)}%</span> since {trend![0][0]}</> : ''}.</> : 'Run the field scanner to fill this in.'}</p>
-          </a>
+        <section class="status">
+          <p class="lead">
+            With today's <a href="#projects">{data.projects.length} tracked projects</a> there's a <strong>{pct(main.p)}</strong> chance of reaching this by {F.target}, and half of the simulated futures get there by <strong>{yr(main.median)}</strong>. What holds it back most: <a href={url(`/problems/${problem.slug}/map/#${main.bottleneck}`)}>{t(main.bottleneck!)}</a>.
+          </p>
+          <p class="body-sm muted">
+            {field ? `${field.summary.totals.organisations.toLocaleString('en')} organisations and ${field.summary.totals.kept.toLocaleString('en')} papers, repositories, startups and grants are mapped in ` : 'See '}<a href={url(`/problems/${problem.slug}/field/`)}>What's happening</a>. Forecasts are an <a href="#forecast">illustrative model</a>.
+          </p>
         </section>
 
-        <LeadingProjects data={data} problem={problem} />
-
-        <section id="simulator" class="simsec">
-          <div class="simhead">
-            <h2 class="display-l">Forecast</h2>
-            <p class="body muted">The different ways from today to the goal, simulated thousands of times: which projects to keep going, where new ones should start, and what each path is likely to reach.</p>
+        <section class="next" aria-labelledby="next-h">
+          <h2 id="next-h" class="heading">Next steps</h2>
+          <div class="cards">
+            <article class="card primary">
+              <p class="num data">1</p>
+              <h3 class="subheading">Start a project where it helps most</h3>
+              <p class="body-sm muted">New projects here would raise the chance by {F.target} from {pct(main.p)} to {pct(best.p)}.</p>
+              <ul class="plain">
+                {starts.map((s) => (
+                  <li>
+                    <a class="body-sm" href={url(`/problems/${problem.slug}/map/#${s.unit}`)}>{t(s.unit)}</a>
+                    <span class="body-sm muted"> · {t(s.subgoal)}</span>
+                    <a class="create body-sm" href={createUrl(s.subgoal, s.unit !== s.subgoal ? s.unit : undefined)}><Icon name="plus" size={12} />Create a project here</a>
+                  </li>
+                ))}
+              </ul>
+            </article>
+            <article class="card">
+              <p class="num data">2</p>
+              <h3 class="subheading">Join a leading project</h3>
+              <p class="body-sm muted">Active projects you can contribute to, back or partner with today.</p>
+              <ul class="plain">
+                {join3.map((p) => (
+                  <li><a class="body-sm" href={p.url!} target="_blank" rel="noopener">{p.title}</a><span class="body-sm muted"> · {t(p.step ?? p.subgoal)}</span></li>
+                ))}
+              </ul>
+              <a class="more body-sm" href="#projects">All leading projects <Icon name="arrow" size={12} /></a>
+            </article>
+            <article class="card">
+              <p class="num data">3</p>
+              <h3 class="subheading">Keep key projects going</h3>
+              <p class="body-sm muted">The tracked projects the forecast depends on most.</p>
+              <ul class="plain">
+                {keep.length ? keep.map((c) => {
+                  const p = projByKey.get(c.key);
+                  return <li>{p?.url ? <a class="body-sm" href={p.url} target="_blank" rel="noopener">{c.title}</a> : <span class="body-sm">{c.title}</span>}<span class="data-sm muted"> · −{c.drop.toFixed(1)} pts if it stops</span></li>;
+                }) : <li class="body-sm muted">No single project stands out yet.</li>}
+              </ul>
+            </article>
           </div>
-          <ForecastGraph data={data} problem={problem} />
-          <details class="own">
-            <summary class="subheading">Build your own scenario</summary>
-            <p class="body-sm muted">Set the target year, how often projects succeed, and how many new projects each sub-goal gets, and see the forecast change.</p>
-            <Simulator data={data} problem={problem} />
-          </details>
+        </section>
+
+        <div id="projects"><LeadingProjects data={data} problem={problem} limit={6} /></div>
+
+        <section id="forecast" class="fc-sec">
+          <div class="head">
+            <h2 class="heading">Forecast</h2>
+            <p class="body-sm muted">Each line is one way forward, simulated thousands of times. Select a line to see where its projects start and when the goal is reached.</p>
+          </div>
+          <ForecastGraph data={data} problem={problem} forecast={F} />
         </section>
       </div>
     )}
   </div>
 </BaseLayout>
 <style>
-  .page { display: grid; gap: var(--space-16); margin-top: var(--space-8); }
+  .page { display: grid; gap: var(--space-12); margin-top: var(--space-8); }
   .page > * { min-width: 0; }
-  .summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-4); }
-  @media (max-width: 1000px) { .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-  @media (max-width: 560px) { .summary { grid-template-columns: minmax(0, 1fr); } }
-  .card { min-width: 0; overflow-wrap: anywhere; display: grid; gap: var(--space-2); align-content: start; background: var(--surface-1); border: var(--stroke-hairline) solid var(--line); border-radius: var(--radius-md); padding: var(--space-4); color: var(--ink); text-decoration: none; }
-  .card:hover { border-color: var(--line-strong); color: var(--ink); }
-  .big { font-family: var(--font-sans); font-size: 18px; line-height: 24px; font-weight: 600; }
-  .simsec { display: grid; gap: var(--space-6); }
-  .simhead { display: grid; gap: var(--space-2); max-width: 70ch; }
-  .own { display: grid; gap: var(--space-4); border-top: var(--stroke-hairline) solid var(--line); padding-top: var(--space-6); }
-  .own > summary { cursor: pointer; }
-  .own[open] > summary { margin-bottom: var(--space-4); }
+  .status { display: grid; gap: var(--space-2); max-width: 76ch; }
+  .lead { font-family: var(--font-serif); font-size: 22px; line-height: 32px; }
+  .lead strong { font-family: var(--font-mono); font-weight: 500; font-size: 20px; }
+  .next { display: grid; gap: var(--space-4); }
+  .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-4); }
+  @media (max-width: 900px) { .cards { grid-template-columns: minmax(0, 1fr); } }
+  .card { display: grid; gap: var(--space-2); align-content: start; background: var(--surface-1); border: var(--stroke-hairline) solid var(--line); border-radius: var(--radius-md); padding: var(--space-4); }
+  .card.primary { border: var(--stroke-path) solid var(--ink); }
+  .num { width: 24px; height: 24px; border-radius: var(--radius-pill); background: var(--surface-2); display: grid; place-items: center; }
+  .card.primary .num { background: var(--ink); color: var(--surface-0); }
+  .plain { list-style: none; margin: var(--space-1) 0 0; padding: 0; display: grid; gap: var(--space-2); }
+  .create { display: inline-flex; gap: 2px; align-items: center; margin-left: var(--space-2); white-space: nowrap; font-weight: 500; }
+  .more { display: inline-flex; gap: var(--space-1); align-items: center; }
+  .fc-sec { display: grid; gap: var(--space-4); }
+  .head { display: grid; gap: var(--space-1); max-width: 70ch; }
 </style>

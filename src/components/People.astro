@@ -1,0 +1,65 @@
+---
+/**
+ * Who's involved: every organisation by type and by sub-goal (the Sankey), then
+ * the curated organisations people have added and checked.
+ */
+import Icon from './Icon.astro';
+import SankeyBreakdown from './SankeyBreakdown.astro';
+import type { Field } from '../lib/field';
+import { KIND_LABEL, KINDS, type ProblemData } from '../lib/problemData';
+import type { Problem } from '../data/problems';
+import { gh, url } from '../site.config';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+interface Props { data: ProblemData; problem: Problem; field: Field | null }
+const { data, problem, field } = Astro.props;
+const orgTemplate = readFileSync(join(process.cwd(), 'templates', 'organisation.json'), 'utf8');
+const uncovered = data.nodes[data.root].children.filter((id) => !data.actorsOn[id]?.length);
+const t = (id: string) => data.nodes[id]?.title ?? id;
+---
+<section class="people" id="people">
+  <div class="head">
+    <div>
+      <h2 class="heading">Who's involved</h2>
+      <p class="body-sm muted">Every organisation found, by type, flowing into the sub-goals and steps they work on. Hover a bar to trace it.</p>
+    </div>
+    <a class="btn btn-secondary" href={gh.newFile(`problems/${problem.slug}/network/your_org_id.json`, orgTemplate)}><Icon name="plus" />Add an organisation</a>
+  </div>
+
+  <SankeyBreakdown field={field} data={data} problem={problem} />
+
+  <div class="curated">
+    <h3 class="subheading">Checked by people <span class="data-sm muted">{data.actors.length}</span></h3>
+    <div class="groups">
+      {KINDS.filter((k) => data.actors.some((a) => a.kind === k)).map((k) => (
+        <div class="group">
+          <p class="label muted">{KIND_LABEL[k]}</p>
+          <ul class="plain body-sm">
+            {data.actors.filter((a) => a.kind === k).map((a) => (
+              <li>
+                {a.url ? <a href={a.url} target="_blank" rel="noopener">{a.name}</a> : a.name}
+                <span class="muted"> · {a.works_on.map(t).join(', ')}</span>
+                <a class="edit" href={gh.edit(a.file)} aria-label={`Edit ${a.name}`}>Edit</a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+    {uncovered.length > 0 && (
+      <p class="body-sm muted">No checked organisation yet on: {uncovered.map((id, i) => <>{i > 0 && ', '}<a href={url(`/problems/${problem.slug}/map/#${id}`)}>{t(id)}</a></>)}. Adding one is a good first contribution.</p>
+    )}
+  </div>
+</section>
+<style>
+  .people { display: grid; gap: var(--space-4); }
+  .people > * { min-width: 0; }
+  .head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-3); align-items: end; }
+  .head > div { display: grid; gap: var(--space-1); max-width: 70ch; }
+  .curated { display: grid; gap: var(--space-3); }
+  .groups { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: var(--space-4) var(--space-6); }
+  .group { display: grid; gap: var(--space-1); align-content: start; }
+  .plain { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-1); }
+  .edit { margin-left: var(--space-2); font-size: 12px; color: var(--ink-muted); }
+</style>

@@ -1,26 +1,21 @@
 ---
-import BaseLayout from '../../../layouts/BaseLayout.astro';
-import ProblemHeader from '../../../components/ProblemHeader.astro';
-import WhoView from '../../../components/WhoView.astro';
-import NoData from '../../../components/NoData.astro';
+// "Who's working on it" is now part of What's happening. Old links land there.
 import { activeProblems } from '../../../data/problems';
-import { getProblemData } from '../../../lib/problemData';
-import { getReportsFor } from '../../../lib/reports';
+import { url } from '../../../site.config';
 
 export function getStaticPaths() {
   return activeProblems.map((problem) => ({ params: { slug: problem.slug }, props: { problem } }));
 }
 const { problem } = Astro.props;
-const data = await getProblemData(problem);
-const reports = await getReportsFor(problem);
+const to = url(`/problems/${problem.slug}/field/#people`);
 ---
-<BaseLayout title={`Who's working on it · ${problem.number}. ${problem.title}`}>
-  <div class="wide">
-    <ProblemHeader problem={problem} current="network" size="l" counts={{ reports: reports.length, steps: data?.order.length, organisations: data?.actors.length }} />
-    {data ? <WhoView data={data} problem={problem} /> : <NoData problem={problem} what="network" />}
-  </div>
-</BaseLayout>
-<style>
-  .wide { max-width: 1600px; margin: 0 auto; padding: 0 var(--space-12); }
-  @media (max-width: 720px) { .wide { padding: 0 var(--space-4); } }
-</style>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Moved: What's happening</title>
+    <meta http-equiv="refresh" content={`0; url=${to}`} />
+    <link rel="canonical" href={to} />
+  </head>
+  <body><p>This page moved to <a href={to}>What's happening</a>.</p></body>
+</html>

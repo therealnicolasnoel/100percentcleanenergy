@@ -2,9 +2,9 @@
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import ProblemHeader from '../../../components/ProblemHeader.astro';
 import FieldView from '../../../components/FieldView.astro';
+import People from '../../../components/People.astro';
 import { activeProblems } from '../../../data/problems';
 import { getProblemData } from '../../../lib/problemData';
-import { getReportsFor } from '../../../lib/reports';
 import { getField } from '../../../lib/field';
 import { gh } from '../../../site.config';
 
@@ -13,22 +13,25 @@ export function getStaticPaths() {
 }
 const { problem } = Astro.props;
 const data = await getProblemData(problem);
-const reports = await getReportsFor(problem);
 const field = getField(problem.slug);
 ---
-<BaseLayout title={`State of the field · ${problem.number}. ${problem.title}`}>
+<BaseLayout title={`What's happening · ${problem.number}. ${problem.title}`}>
   <div class="wide">
-    <ProblemHeader problem={problem} current="field" size="l" counts={{ reports: reports.length, steps: data?.order.length, organisations: data?.actors.length }} />
-    {data && field ? <FieldView field={field} data={data} problem={problem} /> : (
-      <div class="panel" style="margin-top: var(--space-6); display: grid; gap: var(--space-3); justify-items: start">
-        <p class="body">This problem hasn't been scanned yet.</p>
-        <p class="body-sm muted">The field scanner needs a tree map and <code class="data-sm">problems/{problem.slug}/scan.json</code>. Create one with <code class="data-sm">npm run scan:init -- {problem.slug}</code>, tune its search terms, then run the "Scan the field" workflow on GitHub.</p>
-        <a class="btn btn-secondary" href={gh.tree(`problems/${problem.slug}`)}>Open the problem folder</a>
+    <ProblemHeader problem={problem} current="happening" />
+    {data && field ? (
+      <FieldView field={field} data={data} problem={problem}>
+        <People data={data} problem={problem} field={field} />
+      </FieldView>
+    ) : data ? (
+      <div class="empty">
+        <People data={data} problem={problem} field={null} />
+        <p class="body-sm muted">No field scan yet. Add <code class="data-sm">problems/{problem.slug}/scan.json</code> (<code class="data-sm">npm run scan:init -- {problem.slug}</code>), then run the "Scan the field" workflow. <a href={gh.tree(`problems/${problem.slug}`)}>Open the problem folder</a></p>
       </div>
-    )}
+    ) : null}
   </div>
 </BaseLayout>
 <style>
   .wide { max-width: 1600px; margin: 0 auto; padding: 0 var(--space-12); }
   @media (max-width: 720px) { .wide { padding: 0 var(--space-4); } }
+  .empty { display: grid; gap: var(--space-6); margin-top: var(--space-6); }
 </style>

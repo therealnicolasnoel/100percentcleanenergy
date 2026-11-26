@@ -6,17 +6,16 @@
  */
 import Icon from './Icon.astro';
 import { buildModel } from '../lib/simulate';
-import { buildForecast, type Branch, type Commit } from '../lib/forecast';
+import { buildForecast, type Branch, type Commit, type Forecast } from '../lib/forecast';
 import type { ProblemData } from '../lib/problemData';
 import type { Problem } from '../data/problems';
 import { gh, url } from '../site.config';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-interface Props { data: ProblemData; problem: Problem; target?: number }
-const { data, problem, target = 2050 } = Astro.props;
-const model = buildModel(data);
-const F = buildForecast(model, data, { target });
+interface Props { data: ProblemData; problem: Problem; target?: number; forecast?: Forecast }
+const { data, problem, target = 2050, forecast } = Astro.props;
+const F = forecast ?? buildForecast(buildModel(data), data, { target });
 const title = (id: string) => data.nodes[id]?.title ?? id;
 const pct = (x: number) => `${Math.round(x * 100)}%`;
 const yr = (y: number) => (Number.isFinite(y) && y < F.start + 75 ? String(Math.round(y)) : `after ${F.start + 75}`);
@@ -38,7 +37,16 @@ const X = (y: number) => {
   return LABEL + 16 + (t < NOW ? (t / NOW) * ZONE : ZONE + ((t - NOW) / (y1 - y0 - NOW)) * (PLOT - ZONE));
 };
 const laneY = (i: number) => TOP + i * LANE;
-const H = TOP + F.branches.length * LANE + 10;
+// The four lines that matter first: today, the best path, the strongest single focus,
+// and the risk of stalling. The others sit below "Show all strategies".
+const byKind = (k: Branch['kind']) => F.branches.filter((b) => b.kind === k);
+const topFocus = [...byKind('focus')].sort((a, b) => b.p - a.p)[0];
+const core = [byKind('main')[0], byKind('best')[0], topFocus, byKind('risk')[0]].filter(Boolean);
+const ordered = [...core, ...F.branches.filter((b) => !core.includes(b)).sort((a, b) => b.p - a.p)];
+const CORE = core.length;
+const H = TOP + ordered.length * LANE + 10;
+const HCORE = TOP + CORE * LANE + 10;
+const human = (b: Branch) => b.kind === 'main' ? "Today's projects" : b.kind === 'best' ? 'Best path' : b.kind === 'risk' ? 'If projects stall' : b.kind === 'balanced' ? 'Spread evenly' : `Focus: ${title(b.id.replace('focus/', ''))}`;
 const pathOf = (b: Branch, i: number) => {
   const y = laneY(i), goal = b.commits.find((c) => c.kind === 'goal')!;
   const end = X(Math.min(goal.year, y1));
@@ -51,26 +59,10 @@ const dot = (c: Commit, y: number) => {
   if (c.kind === 'goal') return `M${x},${y - 8}L${x + 8},${y}L${x},${y + 8}L${x - 8},${y}Z`;
   return null;
 };
-const best = F.branches.find((b) => b.kind === 'best')!;
-const nextSteps = best.starts.sort((a, b) => b.count - a.count);
 ---
 <section class="fc" data-forecast>
-  <div class="intro">
-    <p class="body">
-      Each branch is one way forward from today. <span class="mono">main</span> is the tracked projects as they are; the others add {F.budget} new projects in different places, or lose momentum. Commits are the projects to start, the year each sub-goal is done in half of the simulated futures, and when the goal is. Select a branch to read its log.
-    </p>
-    <div class="start-here">
-      <p class="label muted">Start projects here first (best-path)</p>
-      <ol class="body-sm">
-        {nextSteps.map((s) => (
-          <li><a href={url(`/problems/${problem.slug}/map/#${s.unit}`)}>{title(s.unit)}</a>{s.unit !== s.subgoal && <span class="muted"> · {title(s.subgoal)}</span>} <span class="data">+{s.count}</span> <a class="mk" href={createUrl(s.subgoal, s.unit !== s.subgoal ? s.unit : undefined)}>Create a project here</a></li>
-        ))}
-      </ol>
-    </div>
-  </div>
-
   <div class="graph-wrap">
-    <svg class="git" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Forecast branches for ${problem.title}`}>
+    <svg class="git collapsed" viewBox={`0 0 ${W} ${HCORE}`} data-h-core={HCORE} data-h-all={H} data-w={W} role="img" aria-label={`Forecast branches for ${problem.title}`}>
       <rect x={X(y0)} y={TOP - 26} width={X(y0 + NOW) - X(y0)} height={H - TOP + 20} class="now" />
       <text x={(X(y0) + X(y0 + NOW)) / 2} y={TOP - 30} text-anchor="middle" class="tick strong">next steps ({y0}–{y0 + NOW})</text>
       {Array.from({ length: 5 }, (_, k) => Math.ceil((y0 + NOW + 1) / 10) * 10 + k * 10).filter((y) => y <= y1).map((y) => (
@@ -81,14 +73,14 @@ const nextSteps = best.starts.sort((a, b) => b.count - a.count);
       ))}
       <line x1={X(target)} x2={X(target)} y1={TOP - 26} y2={H - 6} class="target" />
       <text x={X(target) + 4} y={TOP - 14} class="tick strong">{target}</text>
-      {F.branches.map((b, i) => {
+      {ordered.map((b, i) => {
         const y = laneY(i);
         const goal = b.commits.find((c) => c.kind === 'goal')!;
         return (
-          <g class:list={['lane', b.kind, { sel: b.kind === 'best' }]} data-branch={b.id} tabindex="0" role="button" aria-label={`${b.name}: ${pct(b.p)} by ${target}`}>
+          <g class:list={['lane', b.kind, { sel: b.kind === 'best', extra: i >= CORE }]} data-branch={b.id} tabindex="0" role="button" aria-label={`${b.name}: ${pct(b.p)} by ${target}`}>
             <rect x="0" y={y - LANE / 2} width={W} height={LANE} class="hit" />
-            <text x="12" y={y - 2} class="name">{b.name}</text>
-            <text x="12" y={y + 13} class="sum">{b.summary.length > 34 ? `${b.summary.slice(0, 33)}…` : b.summary}</text>
+            <text x="12" y={y - 2} class="hn">{human(b).length > 26 ? `${human(b).slice(0, 25)}…` : human(b)}</text>
+            <text x="12" y={y + 13} class="sum">{b.name}</text>
             <path d={pathOf(b, i)} class="br" />
             {goal.year >= y1 && <line x1={X(y1)} x2={W - RIGHT + 6} y1={y} y2={y} class="br open" />}
             {b.commits.filter((c) => c.kind !== 'fork').map((c) => {
@@ -112,12 +104,13 @@ const nextSteps = best.starts.sort((a, b) => b.count - a.count);
     <span><svg width="12" height="12" aria-hidden="true"><circle cx="6" cy="6" r="4" class="lg bn" /></svg>last sub-goal: the bottleneck</span>
     <span><svg width="14" height="14" aria-hidden="true"><path d="M7,0L14,7L7,14L0,7Z" class="lg goal" /></svg>goal reached in half of futures</span>
   </p>
+  {ordered.length > CORE && <button type="button" class="btn btn-secondary all" data-all>Show all {ordered.length} strategies</button>}
 
   <div class="log-wrap">
-    {F.branches.map((b) => (
+    {ordered.map((b) => (
       <section class="log" data-log={b.id} hidden={b.kind !== 'best'}>
         <div class="log-head">
-          <p class="mono name-big">{b.name}</p>
+          <p class="name-big">{human(b)} <span class="mono data-sm muted">{b.name}</span></p>
           <p class="body">{b.summary}</p>
           <dl class="stats">
             <div><dt class="label muted">By {target}</dt><dd class="numeral">{pct(b.p)}</dd></div>
@@ -143,20 +136,10 @@ const nextSteps = best.starts.sort((a, b) => b.count - a.count);
     ))}
   </div>
 
-  <details class="compare">
-    <summary class="label">Compare every branch</summary>
-    <div class="scroll">
-      <table>
-        <thead><tr><th>Branch</th><th class="n">New projects</th><th class="n">By {target}</th><th class="n">vs main</th><th class="n">Half of futures by</th><th>Bottleneck</th></tr></thead>
-        <tbody>
-          {F.branches.map((b) => (
-            <tr><td class="mono">{b.name}</td><td class="n data">{b.newProjects}</td><td class="n data">{pct(b.p)}</td><td class="n data">{b.kind === 'main' ? '—' : sign(b.delta)}</td><td class="n data">{yr(b.median)}</td><td class="body-sm">{b.bottleneck ? title(b.bottleneck) : ''}</td></tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+  <details class="how body-sm muted">
+    <summary>How the forecast works</summary>
+    <p>An illustrative model, not a prediction. Every line runs the same {F.runs.toLocaleString('en')} simulated futures, so differences come from the strategy alone. The best path adds {F.budget} new projects two at a time, each pair on whichever step raises the chance by {target} most. New projects count as active, average-sized projects that deliver 45% of the time. It all rests on the sub-goal estimates in the Plan, which people own and can change.</p>
   </details>
-  <p class="body-sm muted">Illustrative model. Ranges, not predictions. {F.runs.toLocaleString('en')} simulated futures per branch, the same futures on every branch so differences come from the strategy alone. best-path is a greedy search: it adds two projects at a time to whichever step raises the chance by {target} most. New projects count as active, average-sized projects that deliver 45% of the time. It runs on the sub-goal estimates, which are assumptions people own.</p>
 </section>
 
 <script>
@@ -169,6 +152,13 @@ const nextSteps = best.starts.sort((a, b) => b.count - a.count);
       const g = (ev.target as Element).closest<SVGGElement>('g.lane');
       if (g) select(g.dataset.branch!);
     });
+    const svg = root.querySelector<SVGSVGElement>('svg.git')!;
+    root.querySelector<HTMLButtonElement>('[data-all]')?.addEventListener('click', (ev) => {
+      const btn = ev.currentTarget as HTMLButtonElement;
+      const open = svg.classList.toggle('collapsed') === false;
+      svg.setAttribute('viewBox', `0 0 ${svg.dataset.w} ${open ? svg.dataset.hAll : svg.dataset.hCore}`);
+      btn.textContent = open ? 'Show fewer' : `Show all ${root.querySelectorAll('g.lane').length} strategies`;
+    });
     root.addEventListener('keydown', (ev) => {
       const g = (ev.target as Element).closest?.<SVGGElement>('g.lane');
       if (g && (ev.key === 'Enter' || ev.key === ' ')) { ev.preventDefault(); select(g.dataset.branch!); }
@@ -179,11 +169,7 @@ const nextSteps = best.starts.sort((a, b) => b.count - a.count);
 <style>
   .fc { display: grid; gap: var(--space-4); }
   .fc > * { min-width: 0; }
-  .intro { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: var(--space-6); align-items: start; }
-  @media (max-width: 900px) { .intro { grid-template-columns: minmax(0, 1fr); } }
   .mono, .name { font-family: var(--font-mono); }
-  .start-here { background: var(--surface-1); border: var(--stroke-hairline) solid var(--line); border-radius: var(--radius-md); padding: var(--space-4); display: grid; gap: var(--space-2); }
-  .start-here ol { margin: 0; padding-left: var(--space-6); display: grid; gap: var(--space-2); }
   .mk { margin-left: var(--space-2); white-space: nowrap; display: inline-flex; gap: 2px; align-items: center; }
   .graph-wrap { overflow-x: auto; background: var(--surface-1); border: var(--stroke-hairline) solid var(--line); }
   .git { display: block; width: 100%; min-width: 900px; height: auto; }
@@ -234,7 +220,11 @@ const nextSteps = best.starts.sort((a, b) => b.count - a.count);
   .cm.goal::before { border-radius: 2px; transform: rotate(45deg); }
   .cm.start { background: var(--surface-0); }
   .hash { color: var(--ink-muted); }
-  .compare summary { cursor: pointer; }
+  .how summary { cursor: pointer; }
+  .how p { margin-top: var(--space-2); max-width: 80ch; }
+  .all { justify-self: start; }
+  .collapsed .extra { visibility: hidden; }
+  .hn { font-family: var(--font-sans); font-size: 13px; font-weight: 600; fill: var(--ink); }
   .scroll { overflow-x: auto; margin-top: var(--space-2); }
   table { border-collapse: collapse; width: 100%; background: var(--surface-1); }
   th, td { padding: var(--space-2) var(--space-3); border-bottom: var(--stroke-hairline) solid var(--line); text-align: left; }

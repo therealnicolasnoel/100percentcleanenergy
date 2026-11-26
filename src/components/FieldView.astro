@@ -64,34 +64,31 @@ const PAGE = 40;
 ---
 <div class="fv" data-field>
   <section class="top">
-    <div class="stats">
-      <div><p class="numeral-xl">{nf.format(summary.totals.kept)}</p><p class="label muted">items mapped to the tree</p></div>
-      <div><p class="numeral-xl">{nf.format(summary.totals.organisations)}</p><p class="label muted">organisations mentioned</p></div>
-      <div><p class="numeral-xl">{Object.keys(summary.sources).length}</p><p class="label muted">open sources</p></div>
-      <div><p class="numeral-xl">{scanned}</p><p class="label muted">last scan</p></div>
-    </div>
-    <div class="method body-sm muted">
+    <p class="body">
+      <span class="data">{nf.format(summary.totals.kept)}</span> papers, repositories, startups, grants and news items and <span class="data">{nf.format(summary.totals.organisations)}</span> organisations, found in {Object.keys(summary.sources).length} open sources and filed under the Plan's steps. Last scan <span class="data">{scanned}</span>; it re-runs every week.
+    </p>
+    <details class="method body-sm muted">
+      <summary>How this is collected</summary>
       <p>
         <span class="badge label"><Icon name="dotted" size={12} />{summary.llm ? `Machine-matched, reviewed by Claude` : 'Machine-matched, not reviewed'}</span>
-        We search free, official APIs for each step's terms, keep items that name the problem's domain and at least one step, and file them under every step they match. Matching is by keywords{summary.llm ? `, then Claude dropped ${summary.llm.dropped} items it judged off-topic` : ''}, so some items will be off. Counts show activity, not quality.
+        We search free, official APIs for each sub-goal's terms, keep items that name the problem's domain, and file them under the step they match. Matching is by keywords{summary.llm ? `, then Claude dropped ${summary.llm.dropped} items it judged off-topic` : ''}, so some items will be off. Counts show activity, not quality.
       </p>
-      <details>
-        <summary class="label">Sources and what each returned</summary>
-        <table class="src">
-          <thead><tr><th>Source</th><th class="n">Fetched</th><th class="n">Kept</th><th>Status</th></tr></thead>
-          <tbody>
-            {Object.entries(summary.sources).map(([k, v]) => (
-              <tr><td>{SOURCE_NAME[k] ?? k}</td><td class="n data">{v.fetched}</td><td class="n data">{v.kept}</td><td class="body-sm">{v.errors ? <span class="warn">{v.lastError}</span> : 'OK'}</td></tr>
-            ))}
-          </tbody>
-        </table>
-        <p class="body-sm muted">{nf.format(summary.totals.fetched)} items fetched, {nf.format(summary.totals.unique)} after merging duplicates. Dropped: {summary.totals.dropped.no_context} outside the domain, {summary.totals.dropped.no_step} matching no step. The search terms for each step are in <a href={gh.blob(`problems/${problem.slug}/scan.json`)}>scan.json</a>.</p>
-      </details>
-    </div>
+      <table class="src">
+        <thead><tr><th>Source</th><th class="n">Fetched</th><th class="n">Kept</th><th>Status</th></tr></thead>
+        <tbody>
+          {Object.entries(summary.sources).map(([k, v]) => (
+            <tr><td>{SOURCE_NAME[k] ?? k}</td><td class="n data">{v.fetched}</td><td class="n data">{v.kept}</td><td class="body-sm">{v.errors ? <span class="warn">{v.lastError}</span> : 'OK'}</td></tr>
+          ))}
+        </tbody>
+      </table>
+      <p>{nf.format(summary.totals.fetched)} items fetched, {nf.format(summary.totals.unique)} after merging duplicates. Dropped: {summary.totals.dropped.no_context} outside the domain, {summary.totals.dropped.no_step} matching no step. The search terms are in <a href={gh.blob(`problems/${problem.slug}/scan.json`)}>scan.json</a>.</p>
+    </details>
   </section>
 
+  <slot />
+
   <section class="land">
-    <h2 class="heading">Landscape</h2>
+    <h2 class="heading">Activity by step</h2>
     <p class="body-sm muted">Items per step of the tree map. A sub-goal counts everything under it. Select a number to list those items.</p>
     <div class="scroll">
       <table class="grid">
@@ -147,7 +144,7 @@ const PAGE = 40;
 
   <section class="dir" id="directory">
     <div class="dir-head">
-      <h2 class="heading">Everything found</h2>
+      <h2 class="heading">Latest work</h2>
       <p class="body-sm muted" data-count></p>
     </div>
     <div class="controls">
@@ -161,7 +158,7 @@ const PAGE = 40;
         <input type="search" data-search placeholder="Title, organisation, source" />
       </label>
       <label class="label">Sort
-        <select data-sort><option value="rank">Most relevant</option><option value="new">Newest</option></select>
+        <select data-sort><option value="new">Newest</option><option value="rank">Most relevant</option></select>
       </label>
     </div>
     <div class="chips" role="group" aria-label="Kind">
@@ -209,7 +206,7 @@ const PAGE = 40;
               <td class="body-sm muted">{o.country ?? ''}</td>
               <td class="body-sm">
                 {o.in_network
-                  ? <a href={url(`/problems/${problem.slug}/network/#${o.in_network}`)}>In network</a>
+                  ? <a href="#people">Checked</a>
                   : <a href={addUrl(o)} class="add" title={`Opens a new file on GitHub with kind "${NETWORK_KIND[o.type] ?? 'research'}" (${KIND_LABEL[NETWORK_KIND[o.type] ?? 'research']})`}><Icon name="plus" size={12} />Add to network</a>}
               </td>
             </tr>
@@ -282,9 +279,10 @@ const PAGE = 40;
 <style>
   .fv { display: grid; gap: var(--space-12); margin-top: var(--space-6); }
   .top { display: grid; gap: var(--space-4); }
-  .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-6); }
-  @media (max-width: 720px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .top { max-width: 80ch; }
   .method { display: grid; gap: var(--space-2); max-width: 90ch; }
+  .method > summary { cursor: pointer; }
+  .method > * + * { margin-top: var(--space-2); }
   .badge { display: inline-flex; align-items: center; gap: var(--space-1); padding: var(--space-1) var(--space-2); background: var(--surface-2); color: var(--ink-muted); border-radius: var(--radius-sm); margin-right: var(--space-2); }
   details summary { cursor: pointer; color: var(--ink); }
   .warn { color: var(--caution); }
