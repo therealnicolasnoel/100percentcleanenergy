@@ -1,0 +1,23 @@
+# Creates the labels the issue forms use. Issue forms only apply labels that exist.
+name: Ensure labels
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/ISSUE_TEMPLATE/**', '.github/workflows/labels.yml']
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  labels:
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh label create project --color 0e8a16 --description "A project on Keystone" --force
+          gh label create task --color 1d76db --description "A task inside a project" --force
+          gh label create spam --color b60205 --description "Hidden from the site" --force

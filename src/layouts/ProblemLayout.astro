@@ -14,9 +14,7 @@ import type { ProblemData, Project } from '../lib/problemData';
 import { getField } from '../lib/field';
 import { buildModel, isOngoing, projectWeight, projectSuccess } from '../lib/simulate';
 import { buildForecast } from '../lib/forecast';
-import { gh, url } from '../site.config';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { url } from '../site.config';
 
 interface Props { problem: Problem; data: ProblemData | null }
 const { problem, data } = Astro.props;
@@ -28,9 +26,9 @@ const t = (id: string) => data?.nodes[id]?.title ?? id;
 const pct = (x: number) => `${Math.round(x * 100)}%`;
 const yr = (y: number) => (Number.isFinite(y) && F && y < F.start + 75 ? String(Math.round(y)) : 'not within 75 years');
 
-const tmpl = JSON.parse(readFileSync(join(process.cwd(), 'templates', 'project.json'), 'utf8'));
 const createUrl = (subgoal: string, step?: string) =>
-  gh.newFile(`problems/${problem.slug}/projects/your_project_id.json`, JSON.stringify({ ...tmpl, subgoal, step: step ?? '' }, null, 2) + '\n');
+  url(`/problems/${problem.slug}/projects/new/?${new URLSearchParams({ subgoal, ...(step ? { step } : {}) })}`);
+const ext = (p: Project) => (p.url?.startsWith('/') ? {} : { target: '_blank', rel: 'noopener' });
 
 const starts = best ? [...best.starts].sort((a, b) => b.count - a.count).slice(0, 3) : [];
 const join3: Project[] = data ? data.projects.filter((p) => isOngoing(p) && p.url).sort((a, b) => projectWeight(b) * projectSuccess(b) - projectWeight(a) * projectSuccess(a)).slice(0, 3) : [];
@@ -64,7 +62,7 @@ const projByKey = new Map((data?.projects ?? []).map((p) => [p.key, p]));
                   <li>
                     <a class="body-sm" href={url(`/problems/${problem.slug}/map/#${s.unit}`)}>{t(s.unit)}</a>
                     <span class="body-sm muted"> · {t(s.subgoal)}</span>
-                    <a class="create body-sm" href={createUrl(s.subgoal, s.unit !== s.subgoal ? s.unit : undefined)}><Icon name="plus" size={12} />Create a project here</a>
+                    <a class="create body-sm" href={createUrl(s.subgoal, s.unit !== s.subgoal ? s.unit : undefined)}><Icon name="plus" size={12} />Open a project here</a>
                   </li>
                 ))}
               </ul>
@@ -75,7 +73,7 @@ const projByKey = new Map((data?.projects ?? []).map((p) => [p.key, p]));
               <p class="body-sm muted">Active projects you can contribute to, back or partner with today.</p>
               <ul class="plain">
                 {join3.map((p) => (
-                  <li><a class="body-sm" href={p.url!} target="_blank" rel="noopener">{p.title}</a><span class="body-sm muted"> · {t(p.step ?? p.subgoal)}</span></li>
+                  <li><a class="body-sm" href={p.url!} {...ext(p)}>{p.title}</a><span class="body-sm muted"> · {t(p.step ?? p.subgoal)}</span></li>
                 ))}
               </ul>
               <a class="more body-sm" href="#projects">All leading projects <Icon name="arrow" size={12} /></a>
@@ -87,7 +85,7 @@ const projByKey = new Map((data?.projects ?? []).map((p) => [p.key, p]));
               <ul class="plain">
                 {keep.length ? keep.map((c) => {
                   const p = projByKey.get(c.key);
-                  return <li>{p?.url ? <a class="body-sm" href={p.url} target="_blank" rel="noopener">{c.title}</a> : <span class="body-sm">{c.title}</span>}<span class="data-sm muted"> · −{c.drop.toFixed(1)} pts if it stops</span></li>;
+                  return <li>{p?.url ? <a class="body-sm" href={p.url} {...ext(p)}>{c.title}</a> : <span class="body-sm">{c.title}</span>}<span class="data-sm muted"> · −{c.drop.toFixed(1)} pts if it stops</span></li>;
                 }) : <li class="body-sm muted">No single project stands out yet.</li>}
               </ul>
             </article>

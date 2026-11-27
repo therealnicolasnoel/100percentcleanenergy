@@ -1,0 +1,20 @@
+---
+/** A row of overlapping GitHub avatars, linking to each profile. */
+import type { Person } from '../lib/community';
+
+interface Props { people: Person[]; max?: number; size?: number }
+const { people, max = 8, size = 28 } = Astro.props;
+const shown = people.slice(0, max);
+const more = people.length - shown.length;
+const src = (p: Person) => `${p.avatar}${p.avatar.includes('?') ? '&' : '?'}s=${size * 2}`;
+---
+<span class="av" style={`--s:${size}px`}>
+  {shown.map((p) => <a href={p.url} title={p.login} target="_blank" rel="noopener"><img src={src(p)} alt={p.login} width={size} height={size} loading="lazy" /></a>)}
+  {more > 0 && <span class="more data-sm">+{more}</span>}
+</span>
+<style>
+  .av { display: inline-flex; align-items: center; }
+  .av a { display: block; margin-right: calc(var(--s) * -0.25); }
+  .av img { width: var(--s); height: var(--s); border-radius: var(--radius-pill); border: 2px solid var(--surface-1); background: var(--surface-2); display: block; }
+  .more { margin-left: calc(var(--s) * 0.4); color: var(--ink-muted); }
+</style>

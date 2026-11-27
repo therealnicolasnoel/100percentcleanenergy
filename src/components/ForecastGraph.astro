@@ -9,9 +9,7 @@ import { buildModel } from '../lib/simulate';
 import { buildForecast, type Branch, type Commit, type Forecast } from '../lib/forecast';
 import type { ProblemData } from '../lib/problemData';
 import type { Problem } from '../data/problems';
-import { gh, url } from '../site.config';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { url } from '../site.config';
 
 interface Props { data: ProblemData; problem: Problem; target?: number; forecast?: Forecast }
 const { data, problem, target = 2050, forecast } = Astro.props;
@@ -21,10 +19,9 @@ const pct = (x: number) => `${Math.round(x * 100)}%`;
 const yr = (y: number) => (Number.isFinite(y) && y < F.start + 75 ? String(Math.round(y)) : `after ${F.start + 75}`);
 const sign = (d: number) => (d >= 0.05 ? `+${d.toFixed(1)}` : d <= -0.05 ? `−${Math.abs(d).toFixed(1)}` : '±0');
 
-// Prefilled "create a project" file for a start commit.
-const tmpl = JSON.parse(readFileSync(join(process.cwd(), 'templates', 'project.json'), 'utf8'));
-const createUrl = (subgoal: string, step?: string) =>
-  gh.newFile(`problems/${problem.slug}/projects/your_project_id.json`, JSON.stringify({ ...tmpl, subgoal, step: step ?? '' }, null, 2) + '\n');
+// The site's "open a project" form, prefilled for a start commit.
+const createUrl = (subgoal: string, step?: string, title?: string) =>
+  url(`/problems/${problem.slug}/projects/new/?${new URLSearchParams({ subgoal, ...(step ? { step } : {}), ...(title ? { title } : {}) })}`);
 
 // Geometry.
 const W = 1160, LABEL = 200, RIGHT = 150, TOP = 44, LANE = 60;
@@ -126,7 +123,7 @@ const dot = (c: Commit, y: number) => {
               <span class="when data-sm muted">{c.kind === 'fork' || c.kind === 'start' || c.kind === 'keep' || c.kind === 'risk' ? 'now' : yr(c.year)}</span>
               <span class="msg body-sm">
                 {c.message}
-                {c.kind === 'start' && c.subgoal && <a class="mk" href={createUrl(c.subgoal, c.step)}><Icon name="plus" size={12} />Create a project here</a>}
+                {c.kind === 'start' && c.subgoal && <a class="mk" href={createUrl(c.subgoal, c.step)}><Icon name="plus" size={12} />Open a project here</a>}
                 {(c.kind === 'milestone' && c.subgoal) && <a class="mk muted" href={url(`/problems/${problem.slug}/map/#${c.subgoal}`)}>Open in the tree</a>}
               </span>
             </li>

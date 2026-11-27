@@ -1,0 +1,64 @@
+# A project on Keystone. The issue is the project's workspace: the site shows it on
+# the problem's Projects tab, comments are its updates, "/join" adds you to the team,
+# and task issues that name it become its tasks. Usually opened from the site's
+# "Open a project" form, which fills in the problem, sub-goal and step.
+name: Open a project
+description: Start a project on one of the problems and find people to work with.
+title: "[Project] "
+labels: [project]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This issue becomes your project's page on Keystone. Edit it any time; the site updates within a few minutes.
+  - type: input
+    id: problem
+    attributes:
+      label: Problem
+      description: The problem folder, for example 11-clean-electricity.
+    validations:
+      required: true
+  - type: input
+    id: subgoal
+    attributes:
+      label: Sub-goal
+      description: The sub-goal id this project serves (filled in by the site).
+    validations:
+      required: true
+  - type: input
+    id: step
+    attributes:
+      label: Step
+      description: The step id, if it fits one (optional).
+  - type: textarea
+    id: summary
+    attributes:
+      label: What will it do?
+      description: Two or three sentences.
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why it matters
+      description: How it moves the sub-goal forward. Link evidence if you can.
+  - type: dropdown
+    id: stage
+    attributes:
+      label: Stage
+      options:
+        - Idea
+        - Active
+        - Paused
+    validations:
+      required: true
+  - type: textarea
+    id: looking_for
+    attributes:
+      label: Looking for
+      description: One per line, for example "data engineer", "pilot utility", "funding".
+  - type: textarea
+    id: links
+    attributes:
+      label: Links
+      description: Repository, website, documents (optional).

@@ -2,6 +2,8 @@ import { getCollection, getEntry, type CollectionEntry } from 'astro:content';
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Problem } from '../data/problems';
+import { getCommunityFor } from './community';
+import { url } from '../site.config';
 
 type CuratedNode = CollectionEntry<'nodes'>['data'];
 /** A node of the tree: the fixed goal, a curated sub-goal, or a generated step. */
@@ -33,6 +35,9 @@ export interface Project {
   contact?: string;
   created_by?: string;
   file?: string;
+  /** Projects run on the platform: the GitHub issue number and team size. */
+  issue?: number;
+  team?: number;
 }
 export type Actor = CollectionEntry<'network'>['data'] & { file: string };
 export type Kind = Actor['kind'];
@@ -165,6 +170,16 @@ export async function getProblemData(problem: Problem): Promise<ProblemData | nu
     let step = p.step || null;
     if (step && nodes[step]?.parent !== p.subgoal) { warn(`${file}: step "${step}" is not a current step under ${p.subgoal}; shown under the sub-goal`); step = null; }
     projects.push({ key: `user:${p.id}`, title: p.title, description: p.description, kind: 'user', source: 'Created by people', url: p.url ?? p.repo ?? null, subgoal: p.subgoal, step, actors: p.organisations, metrics: {}, score: 1000, status: p.status, looking_for: p.looking_for, contact: p.contact, created_by: p.created_by, file });
+  }
+  // Projects run on the platform (GitHub issues, see community.ts).
+  for (const c of await getCommunityFor(folder)) {
+    if (nodes[c.subgoal]?.type !== 'subgoal') { warn(`project #${c.number}: sub-goal "${c.subgoal}" not found; shown only on the Projects tab`); continue; }
+    const step = c.step && nodes[c.step]?.parent === c.subgoal ? c.step : null;
+    projects.push({
+      key: `issue:${c.number}`, title: c.title, description: c.summary, kind: 'user', source: 'On Keystone', url: url(`/problems/${folder}/projects/${c.number}/`),
+      subgoal: c.subgoal, step, actors: [], metrics: {}, score: 1000 + c.team.length, status: c.stage, looking_for: c.lookingFor, created_by: c.author.login,
+      issue: c.number, team: c.team.length,
+    });
   }
   const projFile = join(process.cwd(), 'problems', folder, 'field', 'projects.json');
   if (existsSync(projFile)) {

@@ -8,9 +8,7 @@ import Icon from './Icon.astro';
 import { projectWeight, projectSuccess, isOngoing, buildModel, levers, DEFAULT_SCENARIO } from '../lib/simulate';
 import type { ProblemData, Project } from '../lib/problemData';
 import type { Problem } from '../data/problems';
-import { gh, url } from '../site.config';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { url } from '../site.config';
 
 interface Props { data: ProblemData; problem: Problem; target?: number; limit?: number }
 const { data, problem, target = 2050, limit = 12 } = Astro.props;
@@ -30,7 +28,7 @@ for (const p of ongoing) {
 }
 const rest = ongoing.filter((p) => !top.includes(p));
 const subgoals = data.nodes[data.root].children;
-const KIND: Record<Project['kind'], string> = { open_source: 'Open source', startup: 'Startup', research: 'Funded research', user: 'Community project' };
+const KIND: Record<Project['kind'], string> = { open_source: 'Open source', startup: 'Startup', research: 'Funded research', user: 'On Keystone' };
 const nf = new Intl.NumberFormat('en');
 const meta = (p: Project) => {
   const m = p.metrics;
@@ -41,11 +39,14 @@ const meta = (p: Project) => {
     ago !== null ? (ago < 31 ? 'updated this month' : `updated ${Math.round(ago / 30)} mo ago`) : '',
     m.batch ? `YC ${m.batch}` : '',
     m.amount_usd ? `$${nf.format(Number(m.amount_usd))} grant` : '',
+    p.team ? `${p.team} ${p.team === 1 ? 'person' : 'people'}` : '',
     p.status ?? '',
   ].filter(Boolean).join(' · ');
 };
-const tmpl = JSON.parse(readFileSync(join(process.cwd(), 'templates', 'project.json'), 'utf8'));
-const createUrl = gh.newFile(`problems/${problem.slug}/projects/your_project_id.json`, JSON.stringify({ ...tmpl, subgoal: subgoals[0] }, null, 2) + '\n');
+const createUrl = url(`/problems/${problem.slug}/projects/new/`);
+// Projects on the platform open their own page; everything else opens in a new tab.
+const ext = (p: Project) => (p.url?.startsWith('/') ? {} : { target: '_blank', rel: 'noopener' });
+const actLabel = (p: Project) => (p.issue ? 'Open the project' : p.kind === 'open_source' ? 'Contribute' : p.kind === 'startup' ? 'Visit' : 'Open');
 ---
 <section class="lp" data-lp data-limit={limit}>
   <div class="lp-head">
@@ -53,7 +54,7 @@ const createUrl = gh.newFile(`problems/${problem.slug}/projects/your_project_id.
       <h2 class="heading">Leading projects</h2>
       <p class="body-sm muted">{ongoing.length} ongoing projects, strongest first. Join one, back one, or start your own.</p>
     </div>
-    <a class="btn btn-primary" href={createUrl}><Icon name="plus" />Create a project</a>
+    <a class="btn btn-primary" href={createUrl}><Icon name="plus" />Open a project</a>
   </div>
   <div class="chips" role="group" aria-label="Filter by sub-goal">
     <button type="button" class="chip on" data-sub="">All</button>
@@ -63,11 +64,11 @@ const createUrl = gh.newFile(`problems/${problem.slug}/projects/your_project_id.
     {[...top, ...rest].map((p, i) => (
       <li class:list={['pc', p.kind]} data-sub={p.subgoal} data-rank={i} hidden={i >= limit}>
         <p class="k label"><span class="tag">{KIND[p.kind]}</span>{meta(p) && <span class="data-sm muted">{meta(p)}</span>}</p>
-        <h3 class="subheading">{p.url ? <a href={p.url} target="_blank" rel="noopener">{p.title}</a> : p.title}</h3>
+        <h3 class="subheading">{p.url ? <a href={p.url} {...ext(p)}>{p.title}</a> : p.title}</h3>
         {p.description && <p class="body-sm desc">{p.description}</p>}
         {p.looking_for && p.looking_for.length > 0 && <p class="body-sm"><strong>Looking for:</strong> {p.looking_for.join(', ')}</p>}
         <p class="serves body-sm"><a href={url(`/problems/${problem.slug}/map/#${p.step ?? p.subgoal}`)}>{data.nodes[p.step ?? p.subgoal].title}</a></p>
-        {p.url && <p class="act body-sm"><a href={p.url} target="_blank" rel="noopener">{p.kind === 'open_source' ? 'Contribute' : p.kind === 'startup' ? 'Visit' : 'Open'} <Icon name="arrow" size={12} /></a></p>}
+        {p.url && <p class="act body-sm"><a href={p.url} {...ext(p)}>{actLabel(p)} <Icon name="arrow" size={12} /></a></p>}
       </li>
     ))}
   </ol>

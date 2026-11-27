@@ -1,0 +1,52 @@
+{
+  "_comment": "Sample GitHub issues for previewing the Projects pages locally: COMMUNITY_FIXTURE=fixtures/community.json npm run dev. Not real projects.",
+  "issues": [
+    {
+      "number": 101, "title": "[Project] Open grid-connection queue tracker", "html_url": "https://github.com/example/repo/issues/101", "state": "open",
+      "user": { "login": "ada-sample", "avatar_url": "https://github.com/identicons/ada-sample.png", "html_url": "https://github.com/ada-sample" },
+      "labels": [{ "name": "project" }], "created_at": "2026-10-02T09:00:00Z", "updated_at": "2026-11-20T10:00:00Z",
+      "body": "### Problem\n\n11-clean-electricity\n\n### Sub-goal\n\ngrids\n\n### Step\n\nt10424\n\n### What will it do?\n\nCollect every public interconnection queue into one open dataset, updated weekly, so developers and regulators can see where projects are stuck.\n\nStarts with the US ISOs, then the EU TSOs.\n\n### Why it matters\n\nOver 2,000 GW of clean capacity is waiting in queues. See https://emp.lbl.gov/queues\n\n### Stage\n\nActive\n\n### Looking for\n\n- Data engineer\n- Someone who knows ENTSO-E data\n- Pilot regulator\n\n### Links\n\nhttps://github.com/example/queues"
+    },
+    {
+      "number": 102, "title": "[Project] Community solar financing playbook", "html_url": "https://github.com/example/repo/issues/102", "state": "open",
+      "user": { "login": "grace-sample", "avatar_url": "https://github.com/identicons/grace-sample.png", "html_url": "https://github.com/grace-sample" },
+      "labels": [{ "name": "project" }], "created_at": "2026-11-10T09:00:00Z", "updated_at": "2026-11-12T10:00:00Z",
+      "body": "### Problem\n\n11-clean-electricity\n\n### Sub-goal\n\nfinance\n\n### Step\n\n_No response_\n\n### What will it do?\n\nA step-by-step guide and template contracts for financing community solar in emerging markets.\n\n### Why it matters\n\n_No response_\n\n### Stage\n\nIdea\n\n### Looking for\n\nProject finance lawyer\n\n### Links\n\n_No response_"
+    },
+    {
+      "number": 103, "title": "[Task] Scrape the PJM queue", "html_url": "https://github.com/example/repo/issues/103", "state": "open",
+      "user": { "login": "ada-sample", "avatar_url": "https://github.com/identicons/ada-sample.png", "html_url": "https://github.com/ada-sample" },
+      "labels": [{ "name": "task" }], "created_at": "2026-10-05T09:00:00Z", "updated_at": "2026-10-05T09:00:00Z",
+      "body": "### Project\n\n101\n\n### What needs doing\n\nWrite a scraper for the PJM queue export and normalise it to the shared schema.\n\n### Skills that help\n\nPython"
+    },
+    {
+      "number": 104, "title": "[Task] Define the shared schema", "html_url": "https://github.com/example/repo/issues/104", "state": "closed",
+      "user": { "login": "ada-sample", "avatar_url": "https://github.com/identicons/ada-sample.png", "html_url": "https://github.com/ada-sample" },
+      "labels": [{ "name": "task" }], "created_at": "2026-10-03T09:00:00Z", "updated_at": "2026-10-09T09:00:00Z",
+      "body": "### Project\n\n#101\n\n### What needs doing\n\nAgree fields for capacity, technology, status and dates.\n\n### Skills that help\n\n_No response_"
+    },
+    {
+      "number": 105, "title": "[Task] Add ENTSO-E data", "html_url": "https://github.com/example/repo/issues/105", "state": "open",
+      "user": { "login": "ada-sample", "avatar_url": "https://github.com/identicons/ada-sample.png", "html_url": "https://github.com/ada-sample" },
+      "labels": [{ "name": "task" }], "created_at": "2026-11-01T09:00:00Z", "updated_at": "2026-11-01T09:00:00Z",
+      "body": "### Project\n\n101\n\n### What needs doing\n\nPull connection requests from the ENTSO-E transparency platform.\n\n### Skills that help\n\nPython, European grid data"
+    },
+    {
+      "number": 106, "title": "[Project] Buy my crypto", "html_url": "https://github.com/example/repo/issues/106", "state": "open",
+      "user": { "login": "spammer", "avatar_url": "https://github.com/identicons/spammer.png", "html_url": "https://github.com/spammer" },
+      "labels": [{ "name": "project" }, { "name": "spam" }], "created_at": "2026-11-11T09:00:00Z", "updated_at": "2026-11-11T09:00:00Z",
+      "body": "### Problem\n\n11-clean-electricity\n\n### Sub-goal\n\ngrids\n\n### What will it do?\n\nSpam"
+    }
+  ],
+  "comments": {
+    "101": [
+      { "id": 1, "user": { "login": "linus-sample", "avatar_url": "https://github.com/identicons/linus-sample.png", "html_url": "https://github.com/linus-sample" }, "body": "/join", "html_url": "https://github.com/example/repo/issues/101#c1", "created_at": "2026-10-06T09:00:00Z" },
+      { "id": 2, "user": { "login": "ada-sample", "avatar_url": "https://github.com/identicons/ada-sample.png", "html_url": "https://github.com/ada-sample" }, "body": "Schema is agreed, scrapers next.", "body_html": "<p>Schema is agreed, <strong>scrapers next</strong>.</p>", "html_url": "https://github.com/example/repo/issues/101#c2", "created_at": "2026-10-09T09:00:00Z" },
+      { "id": 3, "user": { "login": "github-actions[bot]", "type": "Bot", "avatar_url": "https://github.com/identicons/github-actions.png", "html_url": "https://github.com/apps/github-actions" }, "body": "bot noise", "html_url": "https://github.com/example/repo/issues/101#c3", "created_at": "2026-10-10T09:00:00Z" },
+      { "id": 4, "user": { "login": "linus-sample", "avatar_url": "https://github.com/identicons/linus-sample.png", "html_url": "https://github.com/linus-sample" }, "body": "First US ISO is in: 312 GW of solar waiting in PJM alone.", "body_html": "<p>First US ISO is in: 312 GW of solar waiting in PJM alone.</p>", "html_url": "https://github.com/example/repo/issues/101#c4", "created_at": "2026-11-20T10:00:00Z" }
+    ],
+    "103": [
+      { "id": 5, "user": { "login": "linus-sample", "avatar_url": "https://github.com/identicons/linus-sample.png", "html_url": "https://github.com/linus-sample" }, "body": "/take", "html_url": "https://github.com/example/repo/issues/103#c5", "created_at": "2026-10-07T09:00:00Z" }
+    ]
+  }
+}

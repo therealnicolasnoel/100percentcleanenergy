@@ -1,0 +1,203 @@
+---
+/**
+ * One project run on the platform: its brief, team, tasks and updates, read from its
+ * GitHub issue at build time. Every action (join, take a task, post an update, edit)
+ * happens on GitHub; the site rebuilds on each change.
+ */
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+import ProblemHeader from '../../../../components/ProblemHeader.astro';
+import Icon from '../../../../components/Icon.astro';
+import Avatars from '../../../../components/Avatars.astro';
+import { activeProblems, type Problem } from '../../../../data/problems';
+import { getProblemData } from '../../../../lib/problemData';
+import { getCommunityFor, forms, textHtml, STAGE_LABEL, type CommunityProject } from '../../../../lib/community';
+import { buildModel, simulate, pBy, DEFAULT_SCENARIO } from '../../../../lib/simulate';
+import { url } from '../../../../site.config';
+
+export async function getStaticPaths() {
+  const out: { params: { slug: string; n: string }; props: { problem: Problem; project: CommunityProject } }[] = [];
+  for (const problem of activeProblems)
+    for (const project of await getCommunityFor(problem.slug)) out.push({ params: { slug: problem.slug, n: String(project.number) }, props: { problem, project } });
+  return out;
+}
+const { problem, project: p } = Astro.props;
+const data = await getProblemData(problem);
+const node = (id: string | null) => (id && data?.nodes[id]) || null;
+const placed = !!data && node(p.subgoal)?.type === 'subgoal';
+
+// What this project adds to the chance of reaching the goal by 2050.
+let impact: { with: number; without: number } | null = null;
+if (data && placed) {
+  const model = buildModel(data);
+  const sc = { ...DEFAULT_SCENARIO, runs: 3000 };
+  impact = { with: pBy(simulate(model, sc), 2050), without: pBy(simulate(model, { ...sc, exclude: [`issue:${p.number}`] }), 2050) };
+}
+const pts = impact ? (impact.with - impact.without) * 100 : 0;
+
+const date = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+const openTasks = p.tasks.filter((t) => !t.done);
+const doneTasks = p.tasks.filter((t) => t.done);
+const listUrl = url(`/problems/${problem.slug}/projects/`);
+---
+<BaseLayout title={`${p.title} · Projects · ${problem.number}. ${problem.title}`} description={p.summary.slice(0, 160)}>
+  <div class="wrap">
+    <ProblemHeader problem={problem} current="projects" />
+
+    <div class="page">
+      <a class="back body-sm" href={listUrl}>← Projects</a>
+
+      <header class="top">
+        <p class="k label"><span class:list={['tag', `st-${p.stage}`]}>{STAGE_LABEL[p.stage]}</span><span class="data-sm muted">#{p.number} · opened {date(p.createdAt)} by <a href={p.author.url} target="_blank" rel="noopener">{p.author.login}</a></span></p>
+        <h2 class="ptitle">{p.title}</h2>
+        {placed ? (
+          <p class="body-sm muted">Serves <a href={url(`/problems/${problem.slug}/map/#${p.subgoal}`)}>{node(p.subgoal)!.title}</a>{node(p.step) && <> → <a href={url(`/problems/${problem.slug}/map/#${p.step}`)}>{node(p.step)!.title}</a></>}</p>
+        ) : (
+          <p class="body-sm warn">The sub-goal "{p.subgoal}" isn't part of this problem's plan, so this project isn't counted in the forecast yet. <a href={p.url} target="_blank" rel="noopener">Edit the issue</a> to fix it.</p>
+        )}
+        {p.stage !== 'done' && (
+          <div class="cta">
+            <a class="btn btn-primary" href={forms.comment(p.url)} target="_blank" rel="noopener" data-cmd="/join">Join the team</a>
+            <a class="btn btn-secondary" href="#tasks">{openTasks.length ? `See ${openTasks.length} open ${openTasks.length === 1 ? 'task' : 'tasks'}` : 'Tasks'}</a>
+            <span class="body-sm muted">To join, comment <code class="data-sm">/join</code> on GitHub (copied when you click).</span>
+          </div>
+        )}
+      </header>
+
+      <div class="grid">
+        <div class="main">
+          <section class="sec">
+            <h3 class="label muted">What it will do</h3>
+            <div class="prose" set:html={textHtml(p.summary)} />
+            {p.why && <><h3 class="label muted">Why it matters</h3><div class="prose" set:html={textHtml(p.why)} /></>}
+          </section>
+
+          <section class="sec" id="tasks">
+            <div class="row">
+              <h3 class="subheading">Tasks <span class="data-sm muted">{openTasks.length} open · {doneTasks.length} done</span></h3>
+              <a class="btn btn-secondary" href={forms.task(p.number)} target="_blank" rel="noopener"><Icon name="plus" />Add a task</a>
+            </div>
+            {p.tasks.length === 0 && <p class="body-sm muted">No tasks yet. Break the work into pieces others can pick up.</p>}
+            <ul class="tasks">
+              {[...openTasks, ...doneTasks].map((t) => (
+                <li id={`task-${t.number}`} class:list={{ done: t.done }}>
+                  <span class="box" aria-hidden="true">{t.done && <Icon name="check" size={12} />}</span>
+                  <div>
+                    <p class="body"><a href={t.url} target="_blank" rel="noopener">{t.title}</a></p>
+                    {t.text && <p class="body-sm muted clamp">{t.text}</p>}
+                    <p class="data-sm muted">
+                      {t.skills && <>{t.skills} · </>}
+                      {t.done ? 'done' : t.takers.length ? <>taken by {t.takers.map((x, i) => <>{i > 0 && ', '}<a href={x.url} target="_blank" rel="noopener">{x.login}</a></>)}</> : 'unclaimed'}
+                    </p>
+                  </div>
+                  {!t.done && !t.takers.length && <a class="take body-sm" href={forms.comment(t.url)} target="_blank" rel="noopener" data-cmd="/take">Take it</a>}
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <section class="sec" id="updates">
+            <div class="row">
+              <h3 class="subheading">Updates <span class="data-sm muted">{p.updates.length}</span></h3>
+              <a class="btn btn-secondary" href={forms.comment(p.url)} target="_blank" rel="noopener"><Icon name="pencil" />Post an update</a>
+            </div>
+            {p.updates.length === 0 && <p class="body-sm muted">No updates yet. Comments on the project's issue show up here.</p>}
+            <ol class="updates">
+              {[...p.updates].reverse().map((u) => (
+                <li>
+                  <p class="who body-sm"><img src={`${u.author.avatar}${u.author.avatar.includes('?') ? '&' : '?'}s=40`} alt="" width="20" height="20" loading="lazy" /><a href={u.author.url} target="_blank" rel="noopener">{u.author.login}</a> <a class="data-sm muted" href={u.url} target="_blank" rel="noopener">{date(u.at)}</a></p>
+                  <div class="prose md" set:html={u.html} />
+                </li>
+              ))}
+            </ol>
+          </section>
+        </div>
+
+        <aside class="side">
+          <section class="panel sec">
+            <h3 class="label muted">Team <span class="data-sm">{p.team.length}</span></h3>
+            <Avatars people={p.team} max={12} size={32} />
+            <a class="btn btn-secondary" href={forms.comment(p.url)} target="_blank" rel="noopener" data-cmd="/join">Join the team</a>
+            <p class="body-sm muted">Comment <code class="data-sm">/join</code> on the project's issue. <button type="button" class="copy body-sm" data-copy="/join">Copy</button></p>
+          </section>
+
+          {p.lookingFor.length > 0 && (
+            <section class="panel sec">
+              <h3 class="label muted">Looking for</h3>
+              <ul class="plain body-sm">{p.lookingFor.map((x) => <li>{x}</li>)}</ul>
+            </section>
+          )}
+
+          {impact && (
+            <section class="panel sec">
+              <h3 class="label muted">In the forecast</h3>
+              <p class="body-sm">{pts >= 0.05
+                ? <>Adds about <strong class="data">{pts.toFixed(1)} pts</strong> to the chance of reaching the goal by 2050 ({Math.round(impact.without * 100)}% → {Math.round(impact.with * 100)}%).</>
+                : <>Counts as one {p.stage === 'idea' ? 'idea-stage' : p.stage} project; its effect on the 2050 chance is under 0.1 pts.</>}</p>
+              <p class="body-sm muted">{p.stage === 'idea' ? 'It counts for more once it is active.' : 'An illustrative model.'} <a href={url(`/problems/${problem.slug}/#forecast`)}>How the forecast works</a></p>
+            </section>
+          )}
+
+          {p.links.length > 0 && (
+            <section class="panel sec">
+              <h3 class="label muted">Links</h3>
+              <ul class="plain body-sm">{p.links.map((l) => <li><a href={l} target="_blank" rel="noopener nofollow">{l.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}</a></li>)}</ul>
+            </section>
+          )}
+
+          <section class="sec manage body-sm">
+            <a href={p.url} target="_blank" rel="noopener"><Icon name="github" />Open on GitHub</a>
+            <span class="muted">To edit, change the stage or mark it done, edit or close the issue. Changes show here within a few minutes.</span>
+          </section>
+        </aside>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<script>
+  // Copy the command so people can paste it in GitHub's comment box.
+  for (const el of document.querySelectorAll<HTMLElement>('[data-copy], [data-cmd]')) {
+    el.addEventListener('click', () => {
+      const cmd = el.dataset.copy ?? el.dataset.cmd!;
+      navigator.clipboard?.writeText(cmd).catch(() => {});
+      if (el.dataset.copy) { const t = el.textContent; el.textContent = 'Copied'; setTimeout(() => (el.textContent = t), 1500); }
+    });
+  }
+</script>
+
+<style>
+  .page { display: grid; gap: var(--space-6); margin-top: var(--space-6); }
+  .page > * { min-width: 0; }
+  .back { color: var(--ink-muted); text-decoration: none; }
+  .ptitle { font-family: var(--font-serif); font-size: 28px; line-height: 34px; font-weight: 400; }
+  .cta { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; margin-top: var(--space-2); }
+  .top { display: grid; gap: var(--space-2); max-width: 80ch; }
+  .k { display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap; }
+  .st-active { background: var(--signal-tint); }
+  .warn { color: var(--ink); background: var(--surface-2); padding: var(--space-2) var(--space-3); border-radius: var(--radius-sm); }
+  .grid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: var(--space-8); align-items: start; }
+  @media (max-width: 900px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+  .main, .side { display: grid; gap: var(--space-8); min-width: 0; }
+  .side { gap: var(--space-4); }
+  .sec { display: grid; gap: var(--space-3); align-content: start; min-width: 0; }
+  .row { display: flex; flex-wrap: wrap; gap: var(--space-3); justify-content: space-between; align-items: center; }
+  .prose { max-width: 72ch; }
+  .prose :global(p) { margin: 0 0 var(--space-2); }
+  .md { overflow-wrap: anywhere; }
+  .md :global(img) { max-width: 100%; height: auto; }
+  .md :global(pre) { overflow-x: auto; background: var(--surface-2); padding: var(--space-2); border-radius: var(--radius-sm); }
+  .tasks, .updates, .plain { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); }
+  .tasks li { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; gap: var(--space-3); align-items: start; padding-bottom: var(--space-3); border-bottom: var(--stroke-hairline) solid var(--line); }
+  .tasks li.done a { color: var(--ink-muted); text-decoration: line-through; }
+  .box { width: 16px; height: 16px; margin-top: 4px; border: var(--stroke-hairline) solid var(--line-strong); border-radius: 4px; display: grid; place-items: center; }
+  .done .box { background: var(--ink); color: var(--surface-0); border-color: var(--ink); }
+  .clamp { display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .take { white-space: nowrap; font-weight: 500; }
+  .updates li { display: grid; gap: var(--space-2); padding-bottom: var(--space-4); border-bottom: var(--stroke-hairline) solid var(--line); }
+  .who { display: flex; gap: var(--space-2); align-items: center; }
+  .who img { border-radius: var(--radius-pill); }
+  .panel .btn { justify-self: start; }
+  .copy { font: inherit; background: none; border: none; color: var(--signal); cursor: pointer; padding: 0; text-decoration: underline; }
+  .manage { gap: var(--space-2); }
+  .manage a { display: inline-flex; gap: var(--space-1); align-items: center; }
+</style>

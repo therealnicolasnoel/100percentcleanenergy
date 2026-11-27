@@ -1,0 +1,133 @@
+---
+/**
+ * Projects: the ones people run on the platform (GitHub issues, see lib/community.ts),
+ * open tasks anyone can pick up, and how it works.
+ */
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+import ProblemHeader from '../../../../components/ProblemHeader.astro';
+import Icon from '../../../../components/Icon.astro';
+import Avatars from '../../../../components/Avatars.astro';
+import { activeProblems } from '../../../../data/problems';
+import { getProblemData } from '../../../../lib/problemData';
+import { getCommunityFor, STAGE_LABEL } from '../../../../lib/community';
+import { url } from '../../../../site.config';
+
+export function getStaticPaths() {
+  return activeProblems.map((problem) => ({ params: { slug: problem.slug }, props: { problem } }));
+}
+const { problem } = Astro.props;
+const data = await getProblemData(problem);
+const projects = await getCommunityFor(problem.slug);
+const t = (id: string | null) => (id && data?.nodes[id]?.title) || id || '';
+const page = (n: number) => url(`/problems/${problem.slug}/projects/${n}/`);
+const newUrl = url(`/problems/${problem.slug}/projects/new/`);
+const running = projects.filter((p) => p.stage !== 'done');
+const done = projects.filter((p) => p.stage === 'done');
+const openTasks = running.flatMap((p) => p.tasks.filter((x) => !x.done).map((x) => ({ ...x, project: p })))
+  .sort((a, b) => a.takers.length - b.takers.length || b.at.localeCompare(a.at));
+const ago = (iso: string) => {
+  const d = Math.round((Date.now() - new Date(iso).getTime()) / 864e5);
+  return d < 1 ? 'today' : d === 1 ? 'yesterday' : d < 31 ? `${d} days ago` : d < 365 ? `${Math.round(d / 30)} mo ago` : `${Math.round(d / 365)} yr ago`;
+};
+const tracked = data?.projects.filter((p) => !p.issue).length ?? 0;
+---
+<BaseLayout title={`Projects · ${problem.number}. ${problem.title}`} description={`Projects people run on: ${problem.title}`}>
+  <div class="wrap">
+    <ProblemHeader problem={problem} current="projects" />
+
+    <div class="page">
+      <section class="intro">
+        <div>
+          <p class="lead">Projects here are run in the open. Each has a page, a team, tasks anyone can pick up, and updates.</p>
+          <p class="body-sm muted">You need a GitHub account. A project is a GitHub issue, so you get notified when people join, comment or finish a task.</p>
+        </div>
+        <a class="btn btn-primary" href={newUrl}><Icon name="plus" />Open a project</a>
+      </section>
+
+      <ol class="how">
+        <li><span class="n data">1</span><div><p class="subheading">Open a project</p><p class="body-sm muted">Say what it does, which part of the plan it serves, and who you need.</p></div></li>
+        <li><span class="n data">2</span><div><p class="subheading">Build a team</p><p class="body-sm muted">People join with one comment and pick up tasks you post.</p></div></li>
+        <li><span class="n data">3</span><div><p class="subheading">Share progress</p><p class="body-sm muted">Post updates. Active projects count in the forecast.</p></div></li>
+      </ol>
+
+      <section class="list" aria-labelledby="on-h">
+        <h2 id="on-h" class="heading">Running now <span class="data muted">{running.length}</span></h2>
+        {running.length ? (
+          <ul class="cards">
+            {running.map((p) => {
+              const open = p.tasks.filter((x) => !x.done).length;
+              return (
+                <li class="pc">
+                  <p class="k label"><span class:list={['tag', `st-${p.stage}`]}>{STAGE_LABEL[p.stage]}</span><span class="data-sm muted">#{p.number} · updated {ago(p.updatedAt)}</span></p>
+                  <h3 class="subheading"><a href={page(p.number)}>{p.title}</a></h3>
+                  {p.summary && <p class="body-sm desc">{p.summary}</p>}
+                  <p class="body-sm serves">{t(p.subgoal)}{p.step && ` → ${t(p.step)}`}</p>
+                  {p.lookingFor.length > 0 && <p class="body-sm"><strong>Looking for:</strong> {p.lookingFor.join(', ')}</p>}
+                  <div class="foot">
+                    <Avatars people={p.team} max={5} />
+                    <span class="data-sm muted">{p.team.length} {p.team.length === 1 ? 'person' : 'people'} · {open} open {open === 1 ? 'task' : 'tasks'}</span>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <div class="empty panel">
+            <p class="body">No projects running yet. Start the first one: the <a href={url(`/problems/${problem.slug}/#next-h`)}>Act page</a> shows where a new project helps most.</p>
+            <a class="btn btn-primary" href={newUrl}><Icon name="plus" />Open a project</a>
+          </div>
+        )}
+      </section>
+
+      {openTasks.length > 0 && (
+        <section class="list" aria-labelledby="tasks-h">
+          <h2 id="tasks-h" class="heading">Open tasks <span class="data muted">{openTasks.length}</span></h2>
+          <p class="body-sm muted">Work anyone can pick up, across all projects. Unclaimed first.</p>
+          <ul class="tasks">
+            {openTasks.slice(0, 12).map((x) => (
+              <li>
+                <a class="body" href={`${page(x.project.number)}#task-${x.number}`}>{x.title}</a>
+                <span class="body-sm muted"> · {x.project.title}{x.skills && ` · ${x.skills}`}</span>
+                <span class="data-sm muted">{x.takers.length ? ` · taken by ${x.takers.map((p) => p.login).join(', ')}` : ' · unclaimed'}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {done.length > 0 && (
+        <section class="list" aria-labelledby="done-h">
+          <h2 id="done-h" class="heading">Done <span class="data muted">{done.length}</span></h2>
+          <ul class="tasks">{done.map((p) => <li><a href={page(p.number)}>{p.title}</a> <span class="body-sm muted">· {t(p.subgoal)}</span></li>)}</ul>
+        </section>
+      )}
+
+      <p class="body-sm muted">Also tracked: {tracked.toLocaleString('en')} open-source projects, startups and funded research found by the scanners. The strongest are on the <a href={url(`/problems/${problem.slug}/#projects`)}>Act page</a>; all of them sit under their step in the <a href={url(`/problems/${problem.slug}/map/`)}>Plan</a>. Working on one of them? Open it here to find people and track tasks.</p>
+    </div>
+  </div>
+</BaseLayout>
+<style>
+  .page { display: grid; gap: var(--space-12); margin-top: var(--space-8); }
+  .page > * { min-width: 0; }
+  .intro { display: flex; flex-wrap: wrap; gap: var(--space-4); justify-content: space-between; align-items: end; }
+  .intro > div { display: grid; gap: var(--space-2); max-width: 70ch; }
+  .lead { font-family: var(--font-serif); font-size: 22px; line-height: 32px; }
+  .how { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-4); }
+  @media (max-width: 800px) { .how { grid-template-columns: minmax(0, 1fr); } }
+  .how li { display: flex; gap: var(--space-3); align-items: start; }
+  .n { flex: none; width: 24px; height: 24px; border-radius: var(--radius-pill); background: var(--surface-2); display: grid; place-items: center; }
+  .list { display: grid; gap: var(--space-3); }
+  .cards { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: var(--space-4); }
+  @media (max-width: 400px) { .cards { grid-template-columns: minmax(0, 1fr); } }
+  .pc { display: grid; gap: var(--space-2); align-content: start; background: var(--surface-1); border: var(--stroke-hairline) solid var(--line); border-radius: var(--radius-md); padding: var(--space-4); }
+  .k { display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap; }
+  .st-active { background: var(--signal-tint); }
+  h3 a { color: var(--ink); }
+  h3 a:hover { color: var(--signal); }
+  .desc { color: var(--ink-muted); display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .serves { color: var(--ink-muted); }
+  .foot { display: flex; gap: var(--space-3); align-items: center; flex-wrap: wrap; margin-top: var(--space-1); }
+  .empty { display: grid; gap: var(--space-3); justify-items: start; }
+  .tasks { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); }
+  .tasks li { border-bottom: var(--stroke-hairline) solid var(--line); padding-bottom: var(--space-2); }
+</style>

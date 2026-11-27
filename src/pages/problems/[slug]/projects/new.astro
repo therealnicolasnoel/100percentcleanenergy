@@ -1,0 +1,154 @@
+---
+/**
+ * Open a project: a short form on the site that hands off to GitHub's issue form
+ * (.github/ISSUE_TEMPLATE/project.yml) with every field filled in. The form submits
+ * straight to GitHub as a GET, so it works without JavaScript; the script only
+ * filters steps by sub-goal, reads ?subgoal=&step=&title= and adds the title prefix.
+ */
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+import ProblemHeader from '../../../../components/ProblemHeader.astro';
+import NoData from '../../../../components/NoData.astro';
+import { activeProblems } from '../../../../data/problems';
+import { getProblemData } from '../../../../lib/problemData';
+import { site, url } from '../../../../site.config';
+
+export function getStaticPaths() {
+  return activeProblems.map((problem) => ({ params: { slug: problem.slug }, props: { problem } }));
+}
+const { problem } = Astro.props;
+const data = await getProblemData(problem);
+const subgoals = data ? data.nodes[data.root].children.map((id) => data.nodes[id]) : [];
+---
+<BaseLayout title={`Open a project · ${problem.number}. ${problem.title}`}>
+  <div class="wrap">
+    <ProblemHeader problem={problem} current="projects" />
+    {!data ? <NoData problem={problem} what="map" /> : (
+      <div class="page">
+        <a class="back body-sm" href={url(`/problems/${problem.slug}/projects/`)}>← Projects</a>
+        <div class="head">
+          <h2 class="heading">Open a project</h2>
+          <p class="body-sm muted">Fill this in, then finish on GitHub: sign in, check it, and press Create. Your project page appears on this site a few minutes later. You can edit everything afterwards.</p>
+        </div>
+
+        <form class="form" action={`${site.repoUrl}/issues/new`} method="get" data-new>
+          <input type="hidden" name="template" value="project.yml" />
+          <input type="hidden" name="problem" value={problem.slug} />
+
+          <label class="f">
+            <span class="label">Name</span>
+            <input name="title" required maxlength="120" placeholder="For example: Open grid-connection queue tracker" />
+          </label>
+
+          <div class="two">
+            <label class="f">
+              <span class="label">Sub-goal it serves</span>
+              <select name="subgoal" required data-sub>
+                {subgoals.map((s) => <option value={s.id}>{s.title}</option>)}
+              </select>
+            </label>
+            <label class="f">
+              <span class="label">Step <span class="muted">(optional)</span></span>
+              <select name="step" data-step>
+                <option value="">Not one step / not sure</option>
+                {subgoals.map((s) => (
+                  <optgroup label={s.title} data-for={s.id}>
+                    {s.children.map((c) => <option value={c} data-for={s.id}>{data.nodes[c].title}</option>)}
+                  </optgroup>
+                ))}
+              </select>
+            </label>
+          </div>
+          <p class="body-sm muted hint">Not sure where it fits? See the <a href={url(`/problems/${problem.slug}/map/`)}>Plan</a>, or where the forecast says new projects help most on the <a href={url(`/problems/${problem.slug}/#next-h`)}>Act page</a>.</p>
+
+          <label class="f">
+            <span class="label">What will it do?</span>
+            <textarea name="summary" required rows="3" placeholder="Two or three sentences."></textarea>
+          </label>
+          <label class="f">
+            <span class="label">Why it matters <span class="muted">(optional)</span></span>
+            <textarea name="why" rows="3" placeholder="How it moves the sub-goal forward. Link evidence if you can."></textarea>
+          </label>
+
+          <div class="two">
+            <label class="f">
+              <span class="label">Stage</span>
+              <select name="stage">
+                <option>Idea</option>
+                <option>Active</option>
+                <option>Paused</option>
+              </select>
+            </label>
+            <label class="f">
+              <span class="label">Links <span class="muted">(optional)</span></span>
+              <input name="links" placeholder="Repository, website, documents" />
+            </label>
+          </div>
+
+          <label class="f">
+            <span class="label">Looking for <span class="muted">(optional, one per line)</span></span>
+            <textarea name="looking_for" rows="3" placeholder={'Data engineer\nPilot utility\nFunding'}></textarea>
+          </label>
+
+          <div class="actions">
+            <button class="btn btn-primary" type="submit">Continue on GitHub</button>
+            <span class="body-sm muted">Opens GitHub in this tab. Everything you write is public.</span>
+          </div>
+        </form>
+      </div>
+    )}
+  </div>
+</BaseLayout>
+
+<script>
+  const form = document.querySelector<HTMLFormElement>('[data-new]');
+  if (form) {
+    const sub = form.querySelector<HTMLSelectElement>('[data-sub]')!;
+    const step = form.querySelector<HTMLSelectElement>('[data-step]')!;
+    const title = form.querySelector<HTMLInputElement>('input[name=title]')!;
+    // Only the chosen sub-goal's steps.
+    const filter = () => {
+      for (const g of step.querySelectorAll<HTMLOptGroupElement>('optgroup')) {
+        const on = g.dataset.for === sub.value;
+        g.hidden = !on;
+        g.disabled = !on;
+      }
+      if (step.selectedOptions[0]?.dataset.for && step.selectedOptions[0].dataset.for !== sub.value) step.value = '';
+    };
+    const q = new URLSearchParams(location.search);
+    if (q.get('subgoal') && [...sub.options].some((o) => o.value === q.get('subgoal'))) sub.value = q.get('subgoal')!;
+    filter();
+    if (q.get('step') && [...step.options].some((o) => o.value === q.get('step') && !o.parentElement?.hasAttribute('disabled'))) step.value = q.get('step')!;
+    if (q.get('title')) title.value = q.get('title')!;
+    sub.addEventListener('change', filter);
+    form.addEventListener('submit', (ev) => {
+      ev.preventDefault();
+      const data = new FormData(form);
+      const out = new URLSearchParams();
+      for (const [k, v] of data) {
+        const s = String(v).trim();
+        if (!s) continue;
+        out.set(k, k === 'title' ? `[Project] ${s}` : s);
+      }
+      location.href = `${form.action}?${out}`;
+    });
+  }
+</script>
+
+<style>
+  .page { display: grid; gap: var(--space-6); margin-top: var(--space-6); max-width: 760px; }
+  .back { color: var(--ink-muted); text-decoration: none; }
+  .head { display: grid; gap: var(--space-2); }
+  .form { display: grid; gap: var(--space-4); background: var(--surface-1); border: var(--stroke-hairline) solid var(--line); border-radius: var(--radius-md); padding: var(--space-6); }
+  @media (max-width: 560px) { .form { padding: var(--space-4); } }
+  .two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); }
+  @media (max-width: 640px) { .two { grid-template-columns: minmax(0, 1fr); } }
+  .f { display: grid; gap: var(--space-1); min-width: 0; }
+  .f input, .f select, .f textarea {
+    font: inherit; font-size: 15px; color: var(--ink); background: var(--surface-0); width: 100%; min-width: 0; box-sizing: border-box;
+    border: var(--stroke-hairline) solid var(--line-strong); border-radius: var(--radius-sm); padding: var(--space-2) var(--space-3);
+  }
+  .f textarea { resize: vertical; }
+  .f :focus-visible { outline: 2px solid var(--signal); outline-offset: 1px; }
+  .hint { margin-top: calc(var(--space-2) * -1); }
+  .actions { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; }
+</style>

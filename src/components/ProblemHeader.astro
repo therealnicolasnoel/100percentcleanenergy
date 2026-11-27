@@ -1,16 +1,17 @@
 ---
-/** Shared header for every problem page: the problem and three tabs. */
+/** Shared header for every problem page: the problem and its tabs. */
 import type { Problem } from '../data/problems';
 import { url } from '../site.config';
 
 interface Props {
   problem: Problem;
-  current: 'act' | 'plan' | 'happening';
+  current: 'act' | 'projects' | 'plan' | 'happening';
 }
 const { problem, current } = Astro.props;
 const base = `/problems/${problem.slug}/`;
 const tabs = [
   { id: 'act', label: 'Act', hint: 'What to do next', href: base },
+  { id: 'projects', label: 'Projects', hint: 'Open one, join one', href: `${base}projects/` },
   { id: 'plan', label: 'Plan', hint: 'Sub-goals, steps, projects', href: `${base}map/` },
   { id: 'happening', label: "What's happening", hint: 'Who is involved, latest work', href: `${base}field/` },
 ];

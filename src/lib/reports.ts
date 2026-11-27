@@ -34,7 +34,7 @@ export async function getReports(): Promise<Report[]> {
     if (!p) throw new Error(`${reportFile(r)}: problem ${r.data.problem} does not exist.`);
     if (!p.active) throw new Error(`${reportFile(r)}: problem ${p.number} is not open for reports. Add it to ACTIVE_PROBLEMS in src/data/problems.ts.`);
     if (reportFolder(r) !== p.slug) throw new Error(`${reportFile(r)}: says problem ${p.number}, so it belongs in problems/${p.slug}/reports/.`);
-    if (['map', 'network'].includes(reportSlug(r))) throw new Error(`${reportFile(r)}: "map" and "network" are reserved names. Rename the report.`);
+    if (['map', 'network', 'field', 'projects'].includes(reportSlug(r))) throw new Error(`${reportFile(r)}: "map", "network", "field" and "projects" are reserved names. Rename the report.`);
     if (!reportSlug(r)) throw new Error(`${reportFile(r)}: reports must be inside problems/${p.slug}/reports/.`);
   }
   return all.sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
